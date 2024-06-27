@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MRead</title>
+  <link rel="stylesheet" href="/assets/style.css" />
+</head>
+
+<body>
+  <header>
+    <h1 align="center">MRead</h1>
+  </header>
+
+  <main>
+    <section id="mangaSection">
+      <div class="c-name__title">
+        <h2>Select manga</h2>
+        <button onclick="handleSync()">sync</button>
+      </div>
+
+      <div id="mangaList"></div>
+    </section>
+
+    <section id="chapterSection">
+      <table class="c-chaptersTable">
+        <thead>
+          <tr>
+            <th>Chapter / images count</th>
+            <th>
+              <button id="btnDownloadAll">D</button>
+            </th>
+          </tr>
+        </thead>
+
+        <tbody id="chaptersList"></tbody>
+      </table>
+    </section>
+
+    <section id="imagesSection">
+      <select id="chaptersSelector" class="ui-select">
+        <option selected disabled>Select a chapter</option>
+      </select>
+
+      <div id="alert"></div>
+
+      <button class="ui-nav ui-nav_prev" id="navPrev">Previous chapter</button>
+      <button class="ui-nav ui-nav_next" id="navNext">Next chapter</button>
+      <main id="images"></main>
+
+      <div class="c-footerBtn">
+        <button class="ui-btn" onclick="scrollToTop()">Scroll to top</button>
+      </div>
+    </section>
+  </main>
+
+  <script src="/assets/script.js"></script>
+</body>
+
+</html>
