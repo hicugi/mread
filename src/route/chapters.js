@@ -62,7 +62,7 @@ export const getChapters = async (req, res) => {
     return ar[0] + ar[1] / 100000;
   };
 
-  result.sort((a, b) => formatName(a.name) - formatName(b.name));
+  result.sort((a, b) => formatName(b.name) - formatName(a.name));
 
   res.send(result);
 };
