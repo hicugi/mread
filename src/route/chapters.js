@@ -16,35 +16,42 @@ export const getChapters = async (req, res) => {
   }
 
   const mainPath = path.join(MANGA_DIR, name);
-  const items = await fs.promises.readdir(mainPath).catch(() => []);
+  const dirItems = await fs.promises.readdir(mainPath).catch(() => []);
 
-  if (!items.length) {
+  if (!dirItems.length) {
     notFoundResponse();
     return;
   }
 
-  const result = items
-    .filter((d) => !d.includes("."))
-    .map((d) => {
-      const chapterPath = path.join(mainPath, d);
-      const items = fs.readdirSync(chapterPath);
+  const result = [];
 
-      const size = (() => {
-        const n = items.reduce((res, item) => {
-          const file = path.join(chapterPath, item);
-          const { size } = fs.statSync(file);
-          return res + size;
-        }, 0);
+  for (const name of dirItems) {
+    const chapterPath = path.join(mainPath, name);
 
-        return (n / 1024 / 1024).toFixed(2) + "MB";
-      })();
+    let items = [];
+    try {
+      items = fs.readdirSync(chapterPath);
+    } catch {}
 
-      return {
-        name: d,
-        itemsCount: items.length,
-        size,
-      };
+    if (!items.length) continue;
+
+    const size = (() => {
+      const n = items.reduce((res, item) => {
+        const file = path.join(chapterPath, item);
+        const { size } = fs.statSync(file);
+
+        return res + size;
+      }, 0);
+
+      return (n / 1024 / 1024).toFixed(2) + "MB";
+    })();
+
+    result.push({
+      name,
+      itemsCount: items.length,
+      size,
     });
+  }
 
   const formatName = (d) => {
     const ar = d.split("-");
