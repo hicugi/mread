@@ -23,7 +23,10 @@ export const getImages = async (req, res) => {
     return;
   }
 
-  const result = items.map((v) => `manga/${name}/${chapter}/${v}`);
+  const origin = `http://${req.headers.host}`;
+  const result = items
+    .filter((elm) => elm.match(/^\d/))
+    .map((v) => `${origin}/manga/${name}/${chapter}/${v}`);
 
   res.send(result);
 };
