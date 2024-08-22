@@ -1,6 +1,8 @@
 import path from "path";
 import fs from "fs";
+
 import { MANGA_DIR } from "../config.js";
+import { getMangaChapters } from "../helper/index.js";
 
 export const getChapters = async (req, res) => {
   const { name } = req.params;
@@ -16,7 +18,7 @@ export const getChapters = async (req, res) => {
   }
 
   const mainPath = path.join(MANGA_DIR, name);
-  const dirItems = await fs.promises.readdir(mainPath).catch(() => []);
+  const dirItems = await getMangaChapters(name);
 
   if (!dirItems.length) {
     notFoundResponse();
@@ -52,17 +54,6 @@ export const getChapters = async (req, res) => {
       size,
     });
   }
-
-  const formatName = (d) => {
-    const ar = d.split("-");
-    if (ar.length === 1) {
-      return Number(d);
-    }
-
-    return ar[0] + ar[1] / 100000;
-  };
-
-  result.sort((a, b) => formatName(b.name) - formatName(a.name));
 
   res.send(result);
 };

@@ -1,5 +1,7 @@
 import fs from "fs/promises";
+
 import { MANGA_DIR } from "../config.js";
+import { getMangaChapters } from "../helper/index.js";
 
 export const getList = async (_, res) => {
   const list = await fs.readdir(MANGA_DIR);
@@ -10,6 +12,16 @@ export const getList = async (_, res) => {
       name,
       image: `http://localhost:8000/manga/${name}/cover.jpg`,
     }));
+
+  for (const item of result) {
+    const dirItems = await getMangaChapters(item.name);
+
+    if (!dirItems.length) {
+      continue;
+    }
+
+    item.lastChapter = dirItems[0];
+  }
 
   res.send(result);
 };
