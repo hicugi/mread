@@ -55,5 +55,15 @@ export const getChapters = async (req, res) => {
     });
   }
 
+  const format = (v) => {
+    const n = Number(
+      v.replace("-", ".").replace(",", ".").replace(/[a-z]/gi, "")
+    );
+    if (!Number.isNaN(n)) return n;
+
+    return Number((v.match(/(\d+)/) || [])[1]) || v;
+  };
+  result.sort((a, b) => format(b.name) - format(a.name));
+
   res.send(result);
 };

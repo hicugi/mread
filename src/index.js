@@ -5,6 +5,7 @@ import express from "express";
 import { getChapters } from "./route/chapters.js";
 import { getImages } from "./route/images.js";
 import { getList } from "./route/list.js";
+import { HOST, PORT } from "./helper/index.js";
 
 // const options = {
 //   key: fs.readFileSync("./cert/localhost.key"),
@@ -12,7 +13,7 @@ import { getList } from "./route/list.js";
 // };
 
 const app = express();
-const port = 8000;
+const port = PORT;
 
 app.use((_, res, next) => {
   res.header("Access-Control-Allow-Origin", "*");
@@ -32,5 +33,5 @@ app.get("/images/:name/:chapter", getImages);
 // const server = https.createServer(options, app);
 
 app.listen(port, () => {
-  console.log(`Server is running on http://localhost:${port}`);
+  console.log(`Server is running on ${HOST}`);
 });

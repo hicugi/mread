@@ -28,5 +28,11 @@ export const getImages = async (req, res) => {
     .filter((elm) => elm.match(/^\d/))
     .map((v) => `${origin}/manga/${name}/${chapter}/${v}`);
 
+  const format = (url) => {
+    const fileName = url.split("/").pop();
+    return fileName.replace(/\..+/, "");
+  };
+  result.sort((a, b) => format(a) - format(b));
+
   res.send(result);
 };
