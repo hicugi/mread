@@ -37,21 +37,9 @@ export const getChapters = async (req, res) => {
 
     if (!items.length) continue;
 
-    const size = (() => {
-      const n = items.reduce((res, item) => {
-        const file = path.join(chapterPath, item);
-        const { size } = fs.statSync(file);
-
-        return res + size;
-      }, 0);
-
-      return (n / 1024 / 1024).toFixed(2) + "MB";
-    })();
-
     result.push({
       name,
       itemsCount: items.length,
-      size,
     });
   }
 
