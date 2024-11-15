@@ -4,7 +4,7 @@ import fs from "fs/promises";
 import { MANGA_DIR } from "../config.js";
 
 export const PORT = 8000;
-export const HOST = `http://10.20.40.53:${PORT}`;
+export const HOST = `http://0.0.0.0:${PORT}`;
 
 const formatChapterName = (d) => {
   const ar = d.split("-");
