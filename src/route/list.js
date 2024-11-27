@@ -1,7 +1,7 @@
 import fs from "fs/promises";
 
 import { MANGA_DIR } from "../config.js";
-import { HOST, getMangaChapters } from "../helper/index.js";
+import { getMangaChapters } from "../helper/index.js";
 
 export const getList = async (_, res) => {
   const list = await fs.readdir(MANGA_DIR);
@@ -10,7 +10,7 @@ export const getList = async (_, res) => {
     .filter((elm) => elm[0] !== ".")
     .map((name) => ({
       name,
-      image: `${HOST}/manga/${name}/cover.jpg`,
+      image: `manga/${name}/cover.jpg`,
     }));
 
   for (const item of result) {

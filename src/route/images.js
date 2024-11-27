@@ -23,10 +23,9 @@ export const getImages = async (req, res) => {
     return;
   }
 
-  const origin = `http://${req.headers.host}`;
   const result = items
     .filter((elm) => elm.match(/^\d/))
-    .map((v) => `${origin}/manga/${name}/${chapter}/${v}`);
+    .map((v) => `manga/${name}/${chapter}/${v}`);
 
   const format = (url) => {
     const fileName = url.split("/").pop();
