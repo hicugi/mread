@@ -2,9 +2,12 @@
   "name": "mread",
   "version": "1.0.0",
   "scripts": {
-    "api": "npm start --prefix ./api"
+    "api": "npm start --prefix ./api",
+    "template": "npm start --prefix ./template",
+    "build:template": "npm run build --prefix ./template"
   },
   "dependencies": {
-    "api": "file:./api"
+    "api": "file:./api",
+    "template": "file:./template"
   }
 }
