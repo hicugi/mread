@@ -32,14 +32,15 @@ function clearCache() {
 onMounted(async () => {
   if (isApp) {
     flFetchMangaList.postMessage("");
-	await new Promise((ok) => {
-	  const interval = setInterval(() => {
-		if (window[HOST_URL_KEY]) {
-		  clearInterval(interval);
-		  ok();
-		}
-	  }, 100);
-	});
+
+    await new Promise((ok) => {
+      const interval = setInterval(() => {
+        if (window[HOST_URL_KEY]) {
+          clearInterval(interval);
+          ok();
+        }
+      }, 100);
+    });
   }
 
   api.get("/list").then((data) => {

@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, defineProps, inject, onMounted } from "vue";
+import { ref, computed, defineProps, inject, watch, onMounted, onUnmounted } from "vue";
 
 import MangaHeader from "./header.vue";
 import ChapterList from "./chapterList.vue";
@@ -23,7 +23,7 @@ const getUrl = inject("getUrl");
 
 const chaptersList = ref([]);
 const selectedChapter = ref(null);
-const downloadStatus = ref({ current: 2, total: 20 });
+const downloadStatus = ref({ current: 0, total: 0 });
 const images = ref([]);
 
 const chaptersList1 = computed(() => {
@@ -84,11 +84,11 @@ async function download(list) {
   const mangaName = props.info.name;
   downloadStatus.value = {
     ...downloadStatus.value,
-	total: list.length,
+    total: list.length,
   };
 
   if (!props.chapters.length) {
-	const imgUrl = getUrl(props.info.image);
+    const imgUrl = getUrl(props.info.image);
     flSyncManga.postMessage([mangaName, imgUrl].join("|"));
   }
 
@@ -111,10 +111,10 @@ async function download(list) {
       const imgsInterval = setInterval(() => {
         if (data[imgIndex] === undefined) {
           if (loadingImagesCount === 0) {
-			downloadStatus.value = {
-			  ...downloadStatus.value,
-			  current: downloadStatus.current + 1,
-			};
+            downloadStatus.value = {
+              ...downloadStatus.value,
+              current: downloadStatus.value.current + 1,
+            };
 
             clearInterval(imgsInterval);
             resolve();
@@ -139,7 +139,7 @@ async function download(list) {
 
   downloadStatus.value = {
     current: 0,
-	total: 0,
+    total: 0,
   };
 
   flFetchMangaList.postMessage("");
@@ -209,6 +209,15 @@ function backFromChapter() {
   selectedChapter.value = null;
 }
 
+watch(downloadStatus, (newVal, oldVal) => {
+  if (!oldVal.total && newVal.total) {
+    document.body.style.overflowY = "hidden";
+    return;
+  }
+
+  document.body.style.overflowY = "";
+});
+
 onMounted(() => {
   const mangaName = props.info.name;
 
@@ -219,6 +228,10 @@ onMounted(() => {
   api.get(`/chapters/${mangaName}`).then((data) => {
     chaptersList.value = data;
   });
+});
+
+onUnmounted(() => {
+  document.body.style.overflowY = "";
 });
 
 const $emit = defineEmits(["back"]);
@@ -278,17 +291,20 @@ const $emit = defineEmits(["back"]);
   </template>
 
   <div v-if="downloadStatus.total" className="c-details__download">
-	<span>{{ downloadStatus.current + " / " + downloadStatus.total }}</span>
-	<span :style="{width: downloadPercent + '%'}" />
+    <div>
+      {{ downloadStatus.current + " / " + downloadStatus.total }}
+      <span :style="{width: downloadPercent + '%'}" />
+    </div>
   </div>
 </template>
 
 <style>
 .c-details__download {
   position: fixed;
-  display: grid;
-  justify-content: center;
-  align-items: center;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
   font-size: 24px;
   line-height: 40px;
 }
@@ -300,15 +316,29 @@ const $emit = defineEmits(["back"]);
   width: 100%;
   height: 100%;
   background-color: #000000b3;
+  content: "";
 }
 
-.c-details__download span {
+.c-details__download div {
   position: absolute;
   left: 50%;
   top: 50%;
   transform: translate(-50%, -50%);
+  padding: 8px 0;
+  border: 1px solid white;
   width: 80%;
   height: 40px;
   display: block;
+  background-color: #4c4c4c;
+  text-align: center;
+}
+
+.c-details__download span {
+  z-index: -1;
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  background-color: #1a1a1a;
 }
 </style>
