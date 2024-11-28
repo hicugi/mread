@@ -2,6 +2,9 @@
   "name": "mread",
   "version": "1.0.0",
   "scripts": {
-    "api": "npm start --prefix ./aip"
+    "api": "npm start --prefix ./api"
+  },
+  "dependencies": {
+    "api": "file:./api"
   }
 }
