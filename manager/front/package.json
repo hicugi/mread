@@ -1,0 +1,19 @@
+{
+  "name": "mread-manager-front",
+  "version": "0.1.0",
+  "engine": {
+    "node": ">=22.11.0",
+    "npm": ">=10.9.0"
+  },
+  "scripts": {
+    "start": "vite",
+    "build": "vite build"
+  },
+  "dependencies": {
+    "vue": "^3.5.13"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^5.2.1",
+    "vite": "^6.0.11"
+  }
+}

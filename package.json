@@ -4,10 +4,14 @@
   "scripts": {
     "api": "npm start --prefix ./api",
     "template": "npm start --prefix ./template",
+    "manager:api": "npm start --prefix ./manager/api",
+    "manager:front": "npm start --prefix ./manager/front",
+
     "build:template": "npm run build --prefix ./template"
   },
   "dependencies": {
     "api": "file:./api",
-    "template": "file:./template"
+    "template": "file:./template",
+    "manager": "file:./manager"
   }
 }
