@@ -1,3 +1,8 @@
+import path from "path";
+
+export const MANGA_DIR = path.resolve("./export");
+console.log(MANGA_DIR)
+
 export const domain = {
   // en
   "manhuaplus.com": {
