@@ -1,9 +1,23 @@
-const HOST_URL_KEY = 'HOST_URL';
-const LOCAL_HOST = "http://127.0.0.1:3080";
+const DOMAIN = "127.0.0.1";
+const HTTP_HOST = `http://${DOMAIN}:3080`;
+const SOCKET_HOST = `ws://${DOMAIN}:3081`;
 
 export const api = {
   get: (url) => {
-    const value = (window[HOST_URL_KEY] ?? LOCAL_HOST) + url;
-    return fetch(value).then((res) => res.json());
+    const fullUrl = HTTP_HOST + url;
+    return fetch(fullUrl).then((res) => res.json());
+  },
+
+  connect: async (url, data) => {
+    const fullUrl = SOCKET_HOST + url;
+
+    const socket = new WebSocket(fullUrl);
+    await new Promise((ok) => {
+      socket.onopen = () => {
+        console.log("Connected");
+        ok();
+      }
+    });
+    return socket;
   }
 };

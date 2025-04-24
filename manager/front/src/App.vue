@@ -1,21 +1,32 @@
 <script setup>
 import { ref, onMounted } from "vue";
 import { api } from "./api.js";
+import MangaList from "./components/MangaList.vue";
 
-const mangaList = ref([]);
+const mangaName = ref(null);
+let socket = null;
+
+async function handleSelect(name) {
+  mangaName.value = name;
+
+  socket = await api.connect("/connection", { name });
+  socket.send(name);
+
+  socket.addEventListener("message", (data) => {
+    console.log("received message", data);
+  });
+}
 
 onMounted(() => {
-  api.get("/list").then(({ list }) => {
-    mangaList.value = list;
-  });
 });
 </script>
 
 <template>
   <div>
-    <h2>Select manga to download</h2>
-    <template v-for="(name, i) in mangaList" :key="i">
-      <button>{{ name }}</button>
+    <MangaList v-if="mangaName === null" @select="handleSelect" />
+
+    <template v-if="mangaName">
+      <h2>Selected manga: {{ mangaName }}</h2>
     </template>
   </div>
 </template>

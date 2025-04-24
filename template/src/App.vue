@@ -2,7 +2,7 @@
 import { ref, provide } from "vue";
 
 import { HOST_URL_KEY } from "./helper/main.js";
-import MangaList from "./components/manga/list.vue";
+import MangaList from "./components/Home.vue";
 import MangaDetails from "./components/manga/details.vue";
 
 const host = ref("http://127.0.0.1:8000");

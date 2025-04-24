@@ -12,6 +12,7 @@ const getImgUrl = inject("getImgUrl");
 const style = computed(() => ({
   backgroundImage: `url('${getImgUrl(image)}')`,
 }));
+const prettyName = computed(() => name.replace(/-/g, ' '));
 
 const emit = defineEmits(["select", "continue"]);
 
@@ -34,7 +35,7 @@ const openLastChapter = () => {
       </template>
     </div>
 
-    <h3>{{ name }}</h3>
+    <h3>{{ prettyName }}</h3>
     <button class="c-card__select" @click="handleSelect">open chapters</button>
   </div>
 </template>

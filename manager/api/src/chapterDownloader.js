@@ -6,6 +6,8 @@ import { getArgs, getConfig, setupBrowser, sleep } from "./helper/general.js";
 
 const ATTEMPS_TO_WAIT = 10;
 const ATTEMPT_DELAY = 20;
+const RETRY_LIMIT = 10;
+const getDonePath = (dir) => path.resolve(`${dir}/.done`);
 
 const formatImgLink = (url) => {
   return url.replace(/(#|\?).*$/, "");
@@ -35,7 +37,7 @@ const downloadImages = async (url, dirPath, config) => {
 
         const fileName = formatImgLink(imgUrl);
         const filePath = `${dirPath}/${imgIndex + 1}${fileName.substring(
-          fileName.lastIndexOf(".")
+          fileName.lastIndexOf("."),
         )}`;
 
         https.get(imgUrl, (res) => {
@@ -72,14 +74,17 @@ const downloadImages = async (url, dirPath, config) => {
         }
 
         const filePath = `${dirPath}/${imgIndex + 1}.${imgUrl.substring(
-          imgUrl.lastIndexOf(".") + 1
+          imgUrl.lastIndexOf(".") + 1,
         )}`;
         if (!fs.existsSync(filePath)) {
           const content = await response.buffer();
 
           if (content === "") {
             const error = new Error(`Couldn't download image from ${imgUrl}`);
-            Object.assign(error, { count: downloadedImgCount, total: images.length });
+            Object.assign(error, {
+              count: downloadedImgCount,
+              total: images.length,
+            });
             throw error;
           }
 
@@ -103,11 +108,10 @@ const downloadImages = async (url, dirPath, config) => {
     const domLinks = await page.evaluate(
       (sel) =>
         Array.from(document.querySelectorAll(sel), (img) =>
-          img.getAttribute("src").trim()
+          img.getAttribute("src").trim(),
         ),
-      config.images
+      config.images,
     );
-
 
     const list = new Set();
     for (const link of domLinks) {
@@ -136,7 +140,7 @@ const downloadImages = async (url, dirPath, config) => {
   await new Promise((resolve) => {
     const interval = setInterval(async () => {
       console.log(
-        `Waiting for responses... ${responseCount} images left, ${attempsCount} attemps`
+        `Waiting for responses... ${responseCount} images left, ${attempsCount} attemps`,
       );
 
       if (responseCount === 0) {
@@ -172,49 +176,46 @@ const downloadImages = async (url, dirPath, config) => {
     }
 
     throw new Error(
-      `Some images are missing. Got ${downloadedImgCount} of ${images.length}`
+      `Some images are missing. Got ${downloadedImgCount} of ${images.length}`,
     );
   }
 
-  fs.writeFileSync(`${dirPath}/done`, Buffer.from(String(images.length)));
+  fs.writeFileSync(getDonePath(dirPath), Buffer.from(String(images.length)));
 
   await browser.close();
 };
 
-export const downloadChapter = async (url, domainConfig) => {
+export const downloadChapter = async (url, meta, socketSend) => {
   let dir;
 
-  if (domainConfig.formatChapter) {
-    dir = domainConfig.formatChapter(url);
+  if (meta.formatChapter) {
+    dir = meta.formatChapter(url);
   } else {
     dir = url.replace(/\/$/, "");
     dir = dir.substring(dir.lastIndexOf("/") + 1).replace("chapter-", "");
   }
 
-  const dirPath = path.join(domainConfig.mangaDir, dir);
+  const dirPath = path.join(meta.mangaDir, dir);
 
   if (!fs.existsSync(dirPath)) {
     fs.mkdirSync(dirPath);
   }
-  if (fs.existsSync(`${dirPath}/done`)) {
+  if (fs.existsSync(getDonePath(dirPath))) {
     return null;
   }
 
-  for (let i=0; i < 10; i++){
+  for (let i = 0; i < RETRY_LIMIT; i++) {
     try {
-      await downloadImages(url, dirPath, domainConfig);
-      break;
+      await downloadImages(url, dirPath, meta);
+      return true;
     } catch (error) {
       const { count, total } = error;
-      console.error(`[downloadChapter] Some images did not downloaded. Missing ${count} from ${total}. Going for try ${i + 1}`);
+      socketSend({
+        status: `Some images missing: ${count} from ${total}. try ${i + 1} of ${RETRY_LIMIT}`,
+      });
     }
   }
-  return true;
+
+  throw new Error(`Coudn't get ${total - count} images`);
 };
 
-if (process.argv[1].match(/\.js$/)) {
-  const [, argUrl] = getArgs();
-  const domainConfig = getConfig();
-
-  downloadChapter(argUrl, domainConfig);
-}

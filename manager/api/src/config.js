@@ -1,9 +1,8 @@
 import path from "path";
 
 export const MANGA_DIR = path.resolve("./export");
-console.log(MANGA_DIR)
 
-export const domain = {
+export const domain = {
   // en
   "manhuaplus.com": {
     chapters: ".wp-manga-chapter a[href]",
