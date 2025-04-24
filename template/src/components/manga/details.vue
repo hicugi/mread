@@ -24,6 +24,7 @@ const getUrl = inject("getUrl");
 const chaptersList = ref([]);
 const selectedChapter = ref(null);
 const downloadStatus = ref({ current: 0, total: 0 });
+const downloadImageStatus = ref({ current: 0, total: 0 });
 const images = ref([]);
 
 const chaptersList1 = computed(() => {
@@ -73,6 +74,11 @@ const downloadPercent = computed(() => {
   const res = current / (total / 100);
   return res.toFixed(2);
 });
+const downloadImagePercent = computed(() => {
+  const { current, total } = downloadImageStatus.value;
+  const res = current / (total / 100);
+  return res.toFixed(2);
+});
 
 function handleRemoveManga() {
   if (confirm("Delete every chapter for current manga?")) {
@@ -100,11 +106,22 @@ async function download(list) {
     }
 
     const data = await fetchImages(mangaName, chapterName);
+
+    downloadImageStatus.value = {
+      ...downloadImageStatus.value,
+      current: 0,
+      total: data.length,
+    };
+
     let imgIndex = 0;
     let loadingImagesCount = 0;
 
     window.flImageDownloaded = () => {
       loadingImagesCount -= 1;
+      downloadImageStatus.value = {
+        ...downloadImageStatus.value,
+        current: downloadImageStatus.value.current + 1,
+      };
     };
 
     await new Promise((resolve) => {
@@ -290,10 +307,11 @@ const $emit = defineEmits(["back"]);
     />
   </template>
 
-  <div v-if="downloadStatus.total" className="c-details__download">
+  <div v-if="downloadStatus.total" class="c-details__download">
     <div>
       {{ downloadStatus.current + " / " + downloadStatus.total }}
-      <span :style="{width: downloadPercent + '%'}" />
+      <span :style="{ width: downloadPercent + '%' }" />
+      <span :style="{ width: downloadImagePercent + '%' }" />
     </div>
   </div>
 </template>
@@ -340,5 +358,11 @@ const $emit = defineEmits(["back"]);
   left: 0;
   height: 100%;
   background-color: #1a1a1a;
+}
+.c-details__download span:last-child {
+  top: auto;
+  bottom: 0;
+  height: 30%;
+  background-color: #000;
 }
 </style>

@@ -3,29 +3,26 @@ import path from "path";
 
 import {
   getArgs,
-  getConfig,
   getFullLink,
   getMangaDir,
   setupBrowser,
   sleep,
+  EXPORT_DIR,
 } from "../helper/general.js";
 import { downloadChapter } from "../chapterDownloader.js";
+import { domain } from "../config.js";
 
 const [, argUrl, argParam] = getArgs();
 
 const mainDirPath = getMangaDir();
 const chaptersTempPath = path.join(mainDirPath, "chapters.json");
 
-const prevInfo = [
-  `Parsing from: ${argUrl}`,
-  `Exporting to next dir: ${mainDirPath}`,
-];
-console.log(prevInfo.join("\n"));
-
 fs.mkdirSync(mainDirPath, { recursive: true });
 
-const getChapters = async (url, domainConfig) => {
-  if (domainConfig.paginationMatch && fs.existsSync(chaptersTempPath)) {
+const getChapters = async (meta) => {
+  const url = meta.url.href;
+
+  if (meta.paginationMatch && fs.existsSync(chaptersTempPath)) {
     return JSON.parse(fs.readFileSync(chaptersTempPath));
   }
 
@@ -38,7 +35,7 @@ const getChapters = async (url, domainConfig) => {
         Array.from(document.querySelectorAll(sel), (a) =>
           a.getAttribute("href")
         ),
-      domainConfig.chapters
+      meta.chapters
     );
 
     await new Promise((ok) => {
@@ -52,10 +49,10 @@ const getChapters = async (url, domainConfig) => {
 
     await browser.close();
 
-    return data.map((v) => getFullLink(v, domainConfig.origin));
+    return data.map((v) => getFullLink(v, meta.origin));
   };
 
-  if (!domainConfig.pagination) {
+  if (!meta.pagination) {
     return getChapterLinks(url);
   }
 
@@ -74,14 +71,14 @@ const getChapters = async (url, domainConfig) => {
         Array.from(document.querySelectorAll(sel), (a) =>
           a.getAttribute("href")
         ),
-      domainConfig.pagination
+      meta.pagination
     );
 
     await browser.close();
 
     return data
-      .filter((link) => link.match(domainConfig.paginationMatch))
-      .map((v) => getFullLink(v, domainConfig.origin));
+      .filter((link) => link.match(meta.paginationMatch))
+      .map((v) => getFullLink(v, meta.origin));
   };
 
   while (pages.length) {
@@ -105,7 +102,7 @@ const getChapters = async (url, domainConfig) => {
 
   const arrResult = Array.from(result);
 
-  if (domainConfig.paginationMatch) {
+  if (meta.paginationMatch) {
     fs.writeFile(
       chaptersTempPath,
       JSON.stringify(arrResult, null, 2),
@@ -116,27 +113,98 @@ const getChapters = async (url, domainConfig) => {
   return arrResult;
 };
 
-(async () => {
-  const domainConfig = getConfig();
+export async function getMetaData(name) {
+  const mangaDir = path.resolve(`${EXPORT_DIR}/${name}/.info`);
 
-  const chapters = await getChapters(domainConfig.url.href, domainConfig);
+  const infoFilePath = path.resolve(`${mangaDir}/.info`);
+  if (!fs.existsSync(mangaDir)) {
+    const error = new Error("Manga dir doesn't exist");
+    throw error;
+  }
+
+  const { url } = result;
+
+  const pageUrl = new URL(url);
+  const result = domain[pageUrl.host];
+
+  return Object.assign({
+    name,
+    origin: pageUrl.origin,
+    url: pageUrl,
+
+    mangaDir,
+  }, result);
+}
+
+/**
+ * @param {Object} params
+ * @param {string} params.name
+ * @param {string} params.after
+ * @param {string} params.before
+ */
+export const downloadManga = async (params, socketSend) => {
+  const { name } = params;
+
+  socketSend({
+    title: `Downloading ${name}`,
+    status: "Getting meta data",
+    clear: true,
+  });
+
+  try {
+    const meta = await getMetaData(name);
+  } catch (error) {
+    socketSend({
+      content: [
+        err.description,
+        `Error message: ${err.message}`,
+      ].join("\n")
+    });
+    return;
+  }
+
+  // Display meta data
+  (() => {
+    const content = [];
+    for (const key in meta) {
+      content.push(`${key}: ${JSON.stringify(meta[key])}`);
+    }
+    socketSend({ content: content.join("\n") });
+  })();
+
+  socketsend({
+    status: "Getting chapters",
+  });
+
+  const chapters = await getChapters(meta);
   chapters.reverse();
 
-  let isActivated = argParam.after === undefined;
-  if (!isActivated) console.log(`Skip everything before ${argParam.after}`);
+  socketsend({
+    status: `${chapters.length} chapters left`,
+    chapters,
+  });
 
+  let isActivated = params.after === undefined;
   for (let i = 0; i < chapters.length; i++) {
     const chapter = chapters[i];
 
-    console.log(
-      `${((i + 1) / (chapters.length / 100)).toFixed(2)}% ${chapter}`
-    );
+    socketSend({
+      status: `${chapters.length - i} chapters left`,
+      index: i,
+    });
 
     isActivated = isActivated || chapter.includes(argParam.after);
     if (!isActivated) continue;
 
-    await downloadChapter(chapter, domainConfig);
+    try {
+      await downloadChapter(chapter, meta);
+    } catch(error) {
+      socketSend({
+        content: chapter + "\nError: " + error?.message,
+        errorIndex: i,
+      });
+    }
 
     if (argParam.before && chapter.includes(argParam.before)) break;
   }
-})();
+}

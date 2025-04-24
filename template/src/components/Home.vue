@@ -1,9 +1,9 @@
 <script setup>
 import { ref, computed, defineProps, defineEmits, onMounted } from "vue";
 
-import Card from "./card.vue";
-import { isApp, HOST_URL_KEY } from "../../helper/main";
-import { api } from "../../api";
+import Card from "./manga/card.vue";
+import { isApp, HOST_URL_KEY } from "../helper/main";
+import { api } from "../api";
 
 const items = ref([]);
 
@@ -20,6 +20,12 @@ const filteredItems = computed(() => {
   return items.value.filter((item) => skip[item.name] === undefined);
 });
 
+function reloadPage() {
+  flReload.postMessage("");
+}
+function clearReload() {
+  flFullReload.postMessage("");
+}
 function clearCache() {
   if (confirm("Remove everything?")) {
     flRemoveAll.postMessage("");
@@ -55,10 +61,10 @@ const emit = defineEmits(["select", "continue"]);
   <section>
     <h1>Manga list</h1>
 
-    <div class="c-mangaList-saved" v-if="listOnDevice.length">
+    <div class="c-home-saved" v-if="listOnDevice.length">
       <h2>Saved on device:</h2>
 
-      <div class="c-mangaList-items">
+      <div class="c-home-items">
         <Card
           v-for="(item, index) of listOnDevice"
           :key="`device${index}`"
@@ -71,7 +77,7 @@ const emit = defineEmits(["select", "continue"]);
       <h2>Online:</h2>
     </div>
 
-    <div class="c-mangaList-items">
+    <div class="c-home-items">
       <Card
         v-for="(item, index) of filteredItems"
         :key="index"
@@ -80,14 +86,16 @@ const emit = defineEmits(["select", "continue"]);
       />
     </div>
 
-    <button class="c-mangaList__cache-btm" type="button" @click="clearCache">
-      clear cache
-    </button>
+    <div class="c-home__footer">
+      <button type="button" @click="reloadPage">reload page</button>
+      <button type="button" @click="clearReload">update template</button>
+      <button type="button" @click="clearCache">clear cache</button>
+    </div>
   </section>
 </template>
 
 <style>
-.c-mangaList-items {
+.c-home-items {
   margin: 0 auto;
   max-width: 1200px;
   padding: 0 15px;
@@ -96,26 +104,29 @@ const emit = defineEmits(["select", "continue"]);
   gap: 30px;
 }
 
-.c-mangaList-saved .c-mangaList-items {
+.c-home-saved .c-home-items {
   margin-bottom: 40px;
 }
 
 @media screen and (min-width: 768px) {
-  .c-mangaList-items {
+  .c-home-items {
     grid-template-columns: repeat(3, 1fr);
   }
 }
 
 @media screen and (min-width: 1024px) {
-  .c-mangaList-items {
+  .c-home-items {
     grid-template-columns: repeat(4, 1fr);
   }
 }
 
-.c-mangaList__cache-btm {
-  margin: 40px 0;
-  padding: 20px 0;
-  width: 100%;
-  display: block;
+.c-home__footer {
+  padding-top: 40px;
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+.c-home__footer button {
+  padding: 8px 20px;
 }
 </style>

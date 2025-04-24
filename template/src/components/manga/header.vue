@@ -1,10 +1,12 @@
 <script setup>
-import { defineProps } from "vue";
+import { defineProps, computed } from "vue";
 import UiButton from "../ui/Button.vue";
 
 const props = defineProps({
   title: String,
 });
+
+const prettyTitle = computed(() => props.title.replace(/-/g, ' '));
 
 const $emit = defineEmits("back");
 
@@ -16,7 +18,7 @@ function handleClickBack() {
 <template>
   <header class="c-header">
     <UiButton @click="handleClickBack">back</UiButton>
-    <h1>{{ title }}</h1>
+    <h1>{{ prettyTitle }}</h1>
   </header>
 </template>
 
