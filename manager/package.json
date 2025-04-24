@@ -2,7 +2,8 @@
   "name": "mread-manager",
   "version": "0.1.0",
   "scripts": {
-    "start": "echo 'Yeah... it's better to start the managerApi & managerFront separatly.\nUse `npm run managerApi` and `npm run managerFront`"
+    "api": "npm start --prefix ./api",
+    "front": "npm start --prefix ./front"
   },
   "dependencies": {
     "api": "file:./api",
