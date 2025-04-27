@@ -1,6 +1,7 @@
 <script setup>
 import { ref, defineEmits, onMounted } from "vue";
 import UiInput from "./Ui/Input.vue";
+import UiButton from "./Ui/Button.vue";
 import { getHost, setHost } from "../constant.js";
 
 const apiHost = import.meta.env.VITE_API_HOST;
@@ -52,6 +53,6 @@ onMounted(() => {
 
   <form @submit.prevent="handleSubmit">
     <UiInput label="Current host" v-model="host" />
-    <button>submit</button>
+    <UiButton type="submit">submit</UiButton>
   </form>
 </template>

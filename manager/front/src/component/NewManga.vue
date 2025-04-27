@@ -1,6 +1,7 @@
 <script setup>
 import { ref } from "vue";
 import UiInput from "./Ui/Input.vue";
+import UiButton from "./Ui/Button.vue";
 
 import { api } from "../constant.js";
 
@@ -41,12 +42,12 @@ function handleSubmit() {
 <template>
   <section class="c-newManga">
     <template v-if="!isActive">
-      <button @click="toggleActive()">Add new manga</button>
+      <UiButton @click="toggleActive()">Add new manga</UiButton>
     </template>
 
     <template v-else>
       <h2>Add new manga</h2>
-      <button @click="toggleActive()">close</button>
+      <UiButton @click="toggleActive()">close</UiButton>
 
       <form @submit.prevent="handleSubmit">
         <UiInput label="Directory" v-model="dir" />
@@ -58,7 +59,7 @@ function handleSubmit() {
           <input type="file" accept="image/jpeg" @change="handleImageChange" />
         </fieldset>
 
-        <button>submit</button>
+        <UiButton>submit</UiButton>
       </form>
     </template>
   </section>
