@@ -1,5 +1,6 @@
 <script setup>
 import { ref, defineEmits, onMounted } from "vue";
+import UiInput from "./Ui/Input.vue";
 import { getHost, setHost } from "../constant.js";
 
 const apiHost = import.meta.env.VITE_API_HOST;
@@ -13,10 +14,11 @@ const updateHost = (value) => {
   emit("change", host.value);
 }
 
-function handleSubmit(e) {
-  const body = new FormData(e.target);
+function handleSubmit() {
+  const body = new FormData();
   const { value } = host;
 
+  body.append('value', value);
   body.append('key', apiKey);
 
   const url = `${apiHost}/`;
@@ -49,10 +51,7 @@ onMounted(() => {
   <h2>Update host</h2>
 
   <form @submit.prevent="handleSubmit">
-    <fieldset>
-      <label>Current host:</label>
-      <input name="value" v-model="host" />
-      <button>submit</button>
-    </fieldset>
+    <UiInput label="Current host" v-model="host" />
+    <button>submit</button>
   </form>
 </template>

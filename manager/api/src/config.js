@@ -1,7 +1,6 @@
 import path from "path";
 
 export const MANGA_DIR = path.resolve("./export");
-console.log(MANGA_DIR)
 
 export const domain = {
   // en
@@ -117,4 +116,13 @@ export const domain = {
       return items.map((el) => el[0] + el[2]);
     },
   },
+
+  "mangalib.me": {
+    chapters: {
+      match: "/chapters$",
+      handler: async (response) => {
+        const data = await response.json();
+      }
+    },
+  }
 };

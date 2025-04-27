@@ -2,6 +2,8 @@
 import { ref } from "vue";
 
 import CurrentHost from "./component/CurrentHost.vue";
+import NewManga from "./component/NewManga.vue";
+
 import { api } from "./constant.js";
 
 const host = ref("");
@@ -21,6 +23,7 @@ function handleChange(newValue) {
     <h1>MRead manager</h1>
 
     <CurrentHost :value="host" @change="handleChange" />
+    <NewManga />
 
     <h2>Select manga to download</h2>
     <template v-for="(name, i) in mangaList" :key="i">
