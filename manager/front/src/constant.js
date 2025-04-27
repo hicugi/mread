@@ -9,9 +9,21 @@ export const setHost = (value) => {
 export const api = {
   host: getHost(),
 
-  get(pathname) {
+  request(pathname, options = {}) {
+    if (options.headers === undefined) {
+      options.headers = {};
+    }
+
     const url = `${this.host}${pathname}`;
-    return fetch(url).then((r) => r.json());
-  }
+    return fetch(url, options).then((r) => r.json());
+  },
+
+  get(pathname) {
+    return this.request(pathname);
+  },
+
+  post(pathname, body) {
+    return this.request(pathname, { method: "POST", body });
+  },
 }
 
