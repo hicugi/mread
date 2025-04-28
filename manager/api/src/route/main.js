@@ -1,7 +1,9 @@
 import path from "path";
+import mainFs from "fs";
 import fs from "fs/promises";
 
-import { MANGA_DIR } from "../config.js";
+import { MANGA_DIR, MANGA_META_FILENAME, MANGA_COOVER } from "../config.js";
+import metaConverter from "../helper/metaConverter.js";
 
 export const addNewManga = async (req, res) => {
   const data = req.body;
@@ -12,20 +14,48 @@ export const addNewManga = async (req, res) => {
   await fs.mkdir(dir, { recursive: true });
 
   await (() => {
-    const body = [];
-    const metaInfo = {
+    const body = metaConverter.encode({
       name,
       link,
-    };
-
-    for (const key in metaInfo) {
-      body.push([key, metaInfo[key]].join(": "))
-    }
-
-    return fs.writeFile(path.join(dir, ".meta"), body.join("\n"));
+    });
+    return fs.writeFile(path.join(dir, MANGA_META_FILENAME), body);
   })();
 
-  await fs.rename(image.path, path.join(dir, ".cover.jpg"));
+  await fs.rename(image.path, path.join(dir, MANGA_COOVER));
 
   res.send({ message: "OK" });
+}
+
+export const removeManga = async (req, res) => {
+  const { params } = req;
+
+  const dir = path.join(MANGA_DIR, params.dir);
+
+  try {
+    await fs.rm(dir, { recursive: true, force: true });
+    res.send({ message: "success" });
+  } catch (err) {
+    console.error(err);
+    res.send({ message: "failed" });
+  }
+}
+
+export const getMangaCover = async (req, res) => {
+  const filePath = path.join(MANGA_DIR, req.params.dir, MANGA_COOVER);
+  const isExist = mainFs.existsSync(filePath);
+
+  if (!isExist) {
+    res.writeHead(404, {
+      "Content-Type": "text/plain"
+    });
+    res.end("404 Not Found");
+    return;
+  }
+
+  res.writeHead(200, {
+    "Content-Type": "image/jpg"
+  });
+
+  const content = await fs.readFile(filePath);
+  res.end(content);
 }

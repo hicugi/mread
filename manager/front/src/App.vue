@@ -3,18 +3,22 @@ import { ref } from "vue";
 
 import CurrentHost from "./component/CurrentHost.vue";
 import NewManga from "./component/NewManga.vue";
+import MangaList from "./component/MangaList.vue";
 
 import { api } from "./constant.js";
 
 const host = ref("");
-const mangaList = ref([]);
+const list = ref([]);
+
+function fetchList() {
+  api.get('/list').then(({ items }) => {
+    list.value = items;
+  });
+}
 
 function handleChange(newValue) {
   host.value = newValue;
-
-  api.get('/list').then(({ list }) => {
-    mangaList.value = list;
-  });
+  fetchList();
 }
 </script>
 
@@ -23,12 +27,8 @@ function handleChange(newValue) {
     <h1>MRead manager</h1>
 
     <CurrentHost :value="host" @change="handleChange" />
-    <NewManga />
-
-    <h2>Select manga to download</h2>
-    <template v-for="(name, i) in mangaList" :key="i">
-      <button>{{ name }}</button>
-    </template>
+    <NewManga @success="fetchList" />
+    <MangaList :host="host" :items="list" @updateList="fetchList()" />
   </div>
 </template>
 
