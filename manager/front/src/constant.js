@@ -22,8 +22,12 @@ export const api = {
     return this.request(pathname);
   },
 
-  post(pathname, body) {
+  post(pathname, body = {}) {
     return this.request(pathname, { method: "POST", body });
+  },
+
+  delete(pathname) {
+    return this.request(pathname, { method: "DELETE" });
   },
 }
 

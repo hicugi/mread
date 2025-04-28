@@ -1,6 +1,8 @@
 import path from "path";
 
 export const MANGA_DIR = path.resolve("./export");
+export const MANGA_META_FILENAME = ".meta";
+export const MANGA_COOVER = ".cover.jpg";
 
 export const domain = {
   // en

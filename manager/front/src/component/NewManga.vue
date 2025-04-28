@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from "vue";
+import { ref, defineEmits } from "vue";
 import UiInput from "./Ui/Input.vue";
 import UiButton from "./Ui/Button.vue";
 
@@ -10,6 +10,8 @@ const dir = ref("");
 const name = ref("");
 const link = ref("");
 const image = ref(null);
+
+const emit = defineEmits("success");
 
 function toggleActive() {
   isActive.value = !isActive.value;
@@ -32,6 +34,7 @@ function handleSubmit() {
     .then(() => {
       alert("Success");
       toggleActive();
+      emit("success");
     }).catch((error) => {
       console.error(error);
       alert("Something went wrong");
