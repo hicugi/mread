@@ -5,7 +5,7 @@ import path from "path";
 
 const upload = multer({ dest: '/tmp/' })
 
-import { addNewManga, getMangaCover, removeManga } from "./route/main.js";
+import { addNewManga, getMangaInfo, getMangaCover, removeManga } from "./route/main.js";
 import { getMangaList } from "./route/list.js";
 
 const PORT = 3080;
@@ -15,9 +15,12 @@ app.use(cors());
 
 app.get("/list", getMangaList);
 
+app.get("/manga/:dir", getMangaInfo);
+app.get("/manga/:dir/image", getMangaCover);
+
 app.post("/manga", upload.single("image"), addNewManga);
 app.delete("/manga/:dir", removeManga);
-app.get("/manga/:dir/image", getMangaCover);
+
 
 app.listen(PORT, () => {
   console.log(`The app started on port ${PORT}`);

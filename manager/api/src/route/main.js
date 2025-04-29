@@ -4,6 +4,7 @@ import fs from "fs/promises";
 
 import { MANGA_DIR, MANGA_META_FILENAME, MANGA_COOVER } from "../config.js";
 import metaConverter from "../helper/metaConverter.js";
+import { getMangaImage } from "../helper/manga.js";
 
 export const addNewManga = async (req, res) => {
   const data = req.body;
@@ -38,6 +39,20 @@ export const removeManga = async (req, res) => {
     console.error(err);
     res.send({ message: "failed" });
   }
+}
+
+export const getMangaInfo = async (req, res) => {
+  const { dir } = req.params;
+  const dirPath = path.join(MANGA_DIR, dir);
+
+  const infoContent = await fs.readFile(path.join(dirPath, MANGA_META_FILENAME), "utf-8");
+  const { name } = metaConverter.decode(infoContent)
+
+  res.send({
+    name,
+    image: getMangaImage(req, dir),
+    chapters: [],
+  });
 }
 
 export const getMangaCover = async (req, res) => {

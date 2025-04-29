@@ -1,5 +1,5 @@
 <script setup>
-import { defineProps, computed, defineEmits } from "vue";
+import { computed } from "vue";
 
 const { label, modelValue } = defineProps({
   label: String,
