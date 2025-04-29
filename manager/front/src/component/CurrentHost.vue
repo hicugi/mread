@@ -8,7 +8,7 @@ const apiHost = import.meta.env.VITE_API_HOST;
 const apiKey = import.meta.env.VITE_API_KEY;
 
 const host = ref(getHost());
-const emit = defineEmits("change");
+const emit = defineEmits(["change"]);
 
 const updateHost = (value) => {
   setHost(value);

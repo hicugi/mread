@@ -1,15 +1,13 @@
 <script setup>
-import { defineProps, defineEmits } from "vue";
 import UiButton from "./Ui/Button.vue";
 import { api } from "../constant.js";
 
 const { host, items } = defineProps({ host: String, items: Array });
-const emit = defineEmits("updateList");
+const emit = defineEmits(["updateList"]);
 
 function getBgImage(item) {
-  const url = `${host}/manga/${item.alias}/image`;
   return {
-    backgroundImage: `url('${url}')`,
+    backgroundImage: `url('${item.image}')`,
   }
 }
 
@@ -31,7 +29,10 @@ function handleRemove(item) {
     <template v-for="(item, i) in items" :key="i">
       <div>
         <h3>{{ item.name }}</h3>
-        <div class="c-mangaList__image" :style="getBgImage(item)" />
+
+        <RouterLink :to="{ name: 'manga', params: { name: item.alias } }">
+          <div class="c-mangaList__image" :style="getBgImage(item)" />
+        </RouterLink>
 
         <UiButton type="button" @click="handleRemove(item)">remove</UiButton>
       </div>

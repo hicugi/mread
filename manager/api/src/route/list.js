@@ -3,6 +3,7 @@ import fs from 'fs/promises';
 
 import { MANGA_DIR, MANGA_META_FILENAME, MANGA_COOVER } from "../config.js";
 import metaConverter from "../helper/metaConverter.js";
+import { getMangaImage } from "../helper/manga.js";
 
 export async function getMangaList(req, res) {
   const items = await fs.readdir(MANGA_DIR);
@@ -18,7 +19,7 @@ export async function getMangaList(req, res) {
     list.push({
       name,
       alias: dir,
-      image: [dir, MANGA_COOVER].join("/"),
+      image: getMangaImage(req, dir),
     });
   }
 
