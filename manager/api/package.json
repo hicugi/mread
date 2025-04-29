@@ -4,12 +4,17 @@
   "main": "src/index.js",
   "scripts": {
     "start": "node .",
-    "test": "node ./src/test.js"
+    "test": "jest"
   },
   "dependencies": {
     "cors": "^2.8.5",
     "express": "^4.21.2",
+    "jest": "^29.7.0",
     "multer": "^1.4.5-lts.2",
     "puppeteer": "^21.1.1"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.52.0",
+    "@types/node": "^22.15.3"
   }
 }

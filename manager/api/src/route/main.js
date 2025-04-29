@@ -2,9 +2,11 @@ import path from "path";
 import mainFs from "fs";
 import fs from "fs/promises";
 
-import { MANGA_DIR, MANGA_META_FILENAME, MANGA_COOVER } from "../config.js";
+import { MANGA_DIR, MANGA_META_FILENAME, MANGA_COOVER, MANGA_CHAPTERS } from "../config.js";
 import metaConverter from "../helper/metaConverter.js";
-import { getMangaImage } from "../helper/manga.js";
+import { getMangaImage, getChapterNumber } from "../helper/manga.js";
+import { getInfo } from "../module/manga.js";
+import { getChapters } from "../module/chapters.js";
 
 export const addNewManga = async (req, res) => {
   const data = req.body;
@@ -43,15 +45,28 @@ export const removeManga = async (req, res) => {
 
 export const getMangaInfo = async (req, res) => {
   const { dir } = req.params;
-  const dirPath = path.join(MANGA_DIR, dir);
+  const { name, image, dirPath } = await getInfo(req, dir);
 
-  const infoContent = await fs.readFile(path.join(dirPath, MANGA_META_FILENAME), "utf-8");
-  const { name } = metaConverter.decode(infoContent)
+  const chaptersFile = path.resolve(dirPath, MANGA_CHAPTERS);
+  let chapters = await fs.readFile(chaptersFile, "utf-8");
+
+  chapters = chapters.split(",").map((item) => {
+    let label = item.split("/").at(-1);
+    label = label.replace(/^(\w|_|-)/ig, "");
+
+    return {
+      label,
+      num: getChapterNumber(label),
+      remoteLink: item,
+    }
+  });
+
+  chapters.sort((a,b) => b.num - a.num);
 
   res.send({
     name,
-    image: getMangaImage(req, dir),
-    chapters: [],
+    image,
+    chapters,
   });
 }
 
@@ -73,4 +88,16 @@ export const getMangaCover = async (req, res) => {
 
   const content = await fs.readFile(filePath);
   res.end(content);
+}
+
+export const mangaDownloadChapters = async (req, res) => {
+  const { dir } = req.params;
+  const { link, dirPath } = await getInfo(req, dir);
+
+  const list = await getChapters(link);
+
+  const filePath = path.resolve(dirPath, MANGA_CHAPTERS);
+  await fs.writeFile(filePath, list.join(","));
+
+  res.send(list);
 }
