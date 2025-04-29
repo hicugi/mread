@@ -3,6 +3,7 @@ import path from "path";
 export const MANGA_DIR = path.resolve("./export");
 export const MANGA_META_FILENAME = ".meta";
 export const MANGA_COOVER = ".cover.jpg";
+export const MANGA_CHAPTERS = ".chapters";
 
 export const domain = {
   // en
@@ -121,10 +122,21 @@ export const domain = {
 
   "mangalib.me": {
     chapters: {
-      match: "/chapters$",
-      handler: async (response) => {
-        const data = await response.json();
-      }
+      selector: ".vue-recycle-scroller__item-view a",
+      attachDomain: true,
+      activateScroll: true,
     },
-  }
+  },
+
+  get(url) {
+    const urlData = new URL(url);
+    const res = this[urlData.host];
+
+    Object.assign(res, {
+      origin: urlData.origin,
+      host: urlData.host,
+    });
+
+    return res;
+  },
 };
