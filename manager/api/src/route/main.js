@@ -49,9 +49,10 @@ export const getMangaInfo = async (req, res) => {
   const { name, image, dirPath } = await getInfo(req, dir);
 
   const chaptersFile = path.resolve(dirPath, MANGA_CHAPTERS);
-  let chapters = await fs.readFile(chaptersFile, "utf-8");
+  const content = await fs.readFile(chaptersFile, "utf-8").catch(() => null);
 
-  chapters = chapters.split(",").map((item) => {
+  const chapters = [];
+  (content ? content.split(",") : []).forEach((item) => {
     let label = item.split("/").at(-1);
     label = label.replace(/^(\w|_|-)/ig, "");
 
@@ -61,12 +62,12 @@ export const getMangaInfo = async (req, res) => {
       isDownloaded = Boolean(mainFs.statSync(donePath));
     } catch {}
 
-    return {
+    chapters.push({
       label,
       num: getChapterNumber(label),
       remoteLink: item,
       isDownloaded,
-    }
+    });
   });
 
   chapters.sort((a,b) => b.num - a.num);
