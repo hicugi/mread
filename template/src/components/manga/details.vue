@@ -155,18 +155,18 @@ function handleSelectChapter(data) {
   images.value = [];
   selectedChapter.value = data;
 
-  const mangaName = props.info.name;
+  const { alias } = props.info;
   const chapterName = data.name;
   const { isDownloaded } = data;
 
   if (isDownloaded) {
     setTimeout(() => {
-      flInsertImgsFromChapter.postMessage([mangaName, chapterName].join("|"));
+      flInsertImgsFromChapter.postMessage([alias, chapterName].join("|"));
     }, 100);
     return;
   }
 
-  fetchImages(mangaName, chapterName).then((data) => {
+  fetchImages(alias, chapterName).then((data) => {
     images.value = data;
   });
 }
@@ -219,7 +219,7 @@ watch(downloadStatus, (newVal, oldVal) => {
 });
 
 onMounted(() => {
-  const mangaName = props.info.name;
+  const mangaName = props.info.alias;
 
   if (isApp) {
     flSelectManga.postMessage(mangaName);

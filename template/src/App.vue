@@ -40,6 +40,7 @@ window.flSyncChapters = (data) => {
 function handleSelect(item, chapter) {
   currentManga.value = {
     name: item.name,
+    alias: item.alias,
     image: item.image,
     chapter,
   };

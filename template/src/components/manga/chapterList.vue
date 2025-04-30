@@ -39,6 +39,8 @@ const emit = defineEmits(["select", "download"]);
   margin: 0 auto;
   padding: 0;
   max-width: 460px;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
   list-style: none;
 }
 

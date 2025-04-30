@@ -3,7 +3,7 @@ import express from "express";
 // import https from "https";
 
 import { getChapters } from "./route/chapters.js";
-import { getImages } from "./route/images.js";
+import { getCover, getImages } from "./route/images.js";
 import { getList } from "./route/list.js";
 import { HOST, PORT } from "./helper/index.js";
 
@@ -29,6 +29,7 @@ app.use(express.static("public"));
 app.get("/list", getList);
 app.get("/chapters/:name", getChapters);
 app.get("/images/:name/:chapter", getImages);
+app.get("/manga/:name/cover.jpg", getCover);
 
 // const server = https.createServer(options, app);
 
