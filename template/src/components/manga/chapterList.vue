@@ -40,7 +40,7 @@ const emit = defineEmits(["select", "download"]);
   padding: 0;
   max-width: 460px;
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(2, 1fr);
   list-style: none;
 }
 

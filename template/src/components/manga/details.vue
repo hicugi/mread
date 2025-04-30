@@ -81,7 +81,7 @@ function handleRemoveManga() {
 }
 
 async function download(list) {
-  const mangaName = props.info.name;
+  const mangaName = props.info.alias;
   downloadStatus.value = {
     ...downloadStatus.value,
     total: list.length,
