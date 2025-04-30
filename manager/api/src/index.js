@@ -5,7 +5,7 @@ import path from "path";
 
 const upload = multer({ dest: '/tmp/' })
 
-import { addNewManga, getMangaInfo, getMangaCover, removeManga, mangaDownloadChapters } from "./route/main.js";
+import { addNewManga, getMangaInfo, getMangaCover, removeManga, mangaDownloadChapters, mangaDownloadImages } from "./route/main.js";
 import { getMangaList } from "./route/list.js";
 
 const PORT = 3080;
@@ -21,6 +21,7 @@ app.get("/manga/:dir/image", getMangaCover);
 app.post("/manga", upload.single("image"), addNewManga);
 app.delete("/manga/:dir", removeManga);
 app.post("/manga/:dir/chapters", mangaDownloadChapters);
+app.get("/manga/:dir/download/chapter", mangaDownloadImages);
 
 
 app.listen(PORT, () => {

@@ -2,6 +2,7 @@
 import { ref, computed, onMounted } from 'vue';
 import { useRoute } from 'vue-router'
 
+import UiButton from '../component/Ui/Button.vue';
 import ChaptersList from '../component/ChaptersList.vue';
 import { api } from '../constant.js';
 
@@ -18,21 +19,25 @@ const imageBg = computed(() => {
   }
 });
 
-function checkChapters() {
-  const { name } = route.params;
-
-  api.post(`/manga/${name}/chapters`).then((data) => {
-    chapters.value = data;
-  });
-}
-
-onMounted(() => {
+function fetchChapters() {
   const { name } = route.params;
 
   api.get(`/manga/${name}`).then((data) => {
     info.value = data;
     chapters.value = data.chapters;
   });
+}
+
+function checkChapters() {
+  const { name } = route.params;
+
+  api.post(`/manga/${name}/chapters`).then((data) => {
+    fetchChapters();
+  });
+}
+
+onMounted(() => {
+  fetchChapters();
 });
 </script>
 
