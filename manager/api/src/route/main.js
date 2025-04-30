@@ -2,11 +2,12 @@ import path from "path";
 import mainFs from "fs";
 import fs from "fs/promises";
 
-import { MANGA_DIR, MANGA_META_FILENAME, MANGA_COOVER, MANGA_CHAPTERS } from "../config.js";
+import { MANGA_DIR, MANGA_META_FILENAME, MANGA_COOVER, MANGA_CHAPTERS, MANGA_CHAPTER_DONE } from "../config.js";
 import metaConverter from "../helper/metaConverter.js";
 import { getMangaImage, getChapterNumber } from "../helper/manga.js";
-import { getInfo } from "../module/manga.js";
+import { getInfo, getImages } from "../module/manga.js";
 import { getChapters } from "../module/chapters.js";
+import { activeConnect } from "../module/network.js";
 
 export const addNewManga = async (req, res) => {
   const data = req.body;
@@ -54,10 +55,17 @@ export const getMangaInfo = async (req, res) => {
     let label = item.split("/").at(-1);
     label = label.replace(/^(\w|_|-)/ig, "");
 
+    const donePath = path.resolve(dirPath, label, MANGA_CHAPTER_DONE);
+    let isDownloaded = false;
+    try {
+      isDownloaded = Boolean(mainFs.statSync(donePath));
+    } catch {}
+
     return {
       label,
       num: getChapterNumber(label),
       remoteLink: item,
+      isDownloaded,
     }
   });
 
@@ -100,4 +108,45 @@ export const mangaDownloadChapters = async (req, res) => {
   await fs.writeFile(filePath, list.join(","));
 
   res.send(list);
+}
+
+export const mangaDownloadImages = async (req, res) => {
+  const { dir } = req.params;
+  const { label, link } = req.query;
+
+  const { dirPath } = await getInfo(req, dir);
+  const chapterPath = path.resolve(dirPath, label);
+  const donePath = path.resolve(chapterPath, MANGA_CHAPTER_DONE);
+
+  const sendMessage = activeConnect(req, res);
+
+  const successResponse = (data = []) => {
+    sendMessage({
+      status: "ok",
+      data,
+    });
+    res.end();
+  }
+
+  if (await fs.stat(donePath).catch(() => false)) {
+    successResponse();
+    return;
+  }
+
+  await fs.mkdir(chapterPath).catch(() => null);
+
+  sendMessage({
+    status: "created dir is ready",
+    data: { path: chapterPath },
+  });
+
+  const list = await getImages(chapterPath, link, (status, data = {}) => {
+    sendMessage({
+      status,
+      data
+    });
+  });
+  await fs.writeFile(donePath, "");
+
+  successResponse(list);
 }

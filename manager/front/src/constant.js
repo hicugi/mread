@@ -29,5 +29,19 @@ export const api = {
   delete(pathname) {
     return this.request(pathname, { method: "DELETE" });
   },
+
+  active(url, callback) {
+    const fullUrl = `${this.host}${url}`;
+    const events = new EventSource(fullUrl);
+
+    events.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      callback(data);
+    };
+
+    return () => {
+      events.close();
+    }
+  }
 }
 

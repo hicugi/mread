@@ -4,6 +4,7 @@ export const MANGA_DIR = path.resolve("./export");
 export const MANGA_META_FILENAME = ".meta";
 export const MANGA_COOVER = ".cover.jpg";
 export const MANGA_CHAPTERS = ".chapters";
+export const MANGA_CHAPTER_DONE = ".done";
 
 export const domain = {
   // en
@@ -125,6 +126,14 @@ export const domain = {
       selector: ".vue-recycle-scroller__item-view a",
       attachDomain: true,
       activateScroll: true,
+    },
+    images: {
+      selector: "main img",
+      nextPageClick: "main [data-page]:first-child",
+      nextPageCheck: (sel) => ({
+        current: document.querySelector("footer select").value,
+        total: document.querySelector("footer select option:last-child").value,
+      }),
     },
   },
 
