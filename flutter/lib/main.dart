@@ -15,13 +15,14 @@ import 'dart:async';
 // 10.0.2.2 bind with localhost
 // const bool _isDebug = bool.fromEnvironment('dart.vm.product') == false;
 String host = '';
-String ADDR_URL = 'http://mread.webmaho.com/appHost.php';
+String addressUrl = 'http://mread.webmaho.com/api/current';
 
 const chaptersSyncTimeout = Duration(milliseconds: 300);
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  runApp(MyApp());
+  const app = MyApp();
+  runApp(app);
 }
 
 void innerDebug(String value) {
@@ -98,13 +99,13 @@ Future<void> _syncHtmlTemplate() async {
 
   innerDebug("Syncing html template");
 
-  await http.get(Uri.parse(ADDR_URL)).then((response) async {
+  await http.get(Uri.parse(addressUrl)).then((response) async {
     host = response.body;
     hostFile.writeAsString(host);
 
-    innerDebug("Updating cache for HTML ${host}");
+    innerDebug("Updating cache for HTML $host");
 
-    await _downloadHtml("${host}/template.html", htmlFile.path);
+    await _downloadHtml("$host/template.html", htmlFile.path);
   });
 }
 
@@ -148,19 +149,25 @@ Future<Map<String, dynamic>> _getChapterDetails(
 }
 
 class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
   @override
   Widget build(BuildContext context) {
+    const home = MyWebView();
+
     return MaterialApp(
       title: 'MRead',
       theme: ThemeData(
         primarySwatch: Colors.blueGrey,
       ),
-      home: MyWebView(),
+      home: home,
     );
   }
 }
 
 class MyWebView extends StatefulWidget {
+  const MyWebView({super.key});
+
   @override
   _ParentWidgetState createState() => _ParentWidgetState();
 }
