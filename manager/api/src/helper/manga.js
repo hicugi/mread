@@ -6,6 +6,8 @@ export const getMangaImage = (req, dir) => {
 }
 
 export const getChapterLabel = (link) => {
+  link = link.trim();
+
   const { chapters } = domain.get(link);
 
   if (chapters.labelMatch !== undefined) {
