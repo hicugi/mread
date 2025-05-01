@@ -7,15 +7,21 @@ import { openPage } from "../module/browser.js";
 **/
 export const getChapters = async (link) => {
   const { origin, chapters } = domain.get(link);
+  const isString = typeof chapters === "string";
 
-  let data = [];
-  const selector = (sel) => Array.from(document.querySelectorAll(sel), (a) => a.getAttribute("href"));
+  const evaluate = (sel) => Array.from(document.querySelectorAll(sel), (a) => a.getAttribute("href"));
 
-  if (typeof chapters === "string") {
-    data = await openPage(link, [selector, chapters]);
-  } else {
-    data = await openPage(link, [selector, chapters.selector], { activateScroll: true });
+  const selector = isString ? chapters : chapters.selector;
+  const browserOptions = {
+    activateScroll: true,
+    gotoOptions: {
+      waitUntil: "domcontentloaded",
+    },
+  };
 
+  let data = await openPage(link, [evaluate, selector], browserOptions);
+
+  if (!isString) {
     if (chapters.attachDomain) {
       data = data.map((v) => [origin, v].join(""));
     }

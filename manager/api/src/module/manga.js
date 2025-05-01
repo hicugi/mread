@@ -88,6 +88,11 @@ export const getImages = async (dir, link, update) => {
 
   imagesList = imagesList.map(formatImgLink);
 
+  if (imagesList.length === 0) {
+    isFinished = true;
+    throw new Error("Images not found");
+  }
+
   for (const image of imagesList) {
     imagesResponse[image] = false;
   }

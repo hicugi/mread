@@ -5,7 +5,7 @@ import { firefox } from "playwright";  // Or 'chromium' or 'firefox'.
 const wait = (timeout) => new Promise((ok) => setTimeout(ok, timeout));
 
 export const openPage = async (url, evaluateProps, options = {}) => {
-  const browser = await firefox.launch({ headless: true });
+  const browser = await firefox.launch({ headless: process.env.HEADLESS != "false" });
   const context = await browser.newContext();
   const page = await context.newPage();
 
@@ -20,7 +20,12 @@ export const openPage = async (url, evaluateProps, options = {}) => {
     page.on("response", options.onResponse);
   }
 
-  await page.goto(url);
+  const gotoOptions = {};
+  if (options.gotoOptions != undefined) {
+    Object.assign(gotoOptions, options.gotoOptions);
+  }
+  await page.goto(url, gotoOptions);
+
   let result = await page.evaluate(...evaluateProps);
 
   if (options.nextPageClick !== undefined) {

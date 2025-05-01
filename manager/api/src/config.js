@@ -8,22 +8,6 @@ export const MANGA_CHAPTER_DONE = ".done";
 
 export const domain = {
   // en
-  "manhuaplus.com": {
-    chapters: ".wp-manga-chapter a[href]",
-    images: ".chapter-video-frame img",
-  },
-  "chapmanganato.com": {
-    chapters: ".row-content-chapter a[href]",
-    images: ".container-chapter-reader > img",
-  },
-  "chapmanganato.to": {
-    chapters: ".row-content-chapter a[href]",
-    images: ".container-chapter-reader > img",
-  },
-  "manganato.com": {
-    chapters: ".row-content-chapter a[href]",
-    images: ".container-chapter-reader > img",
-  },
   "coffeemanga.io": {
     chapters: ".wp-manga-chapter a[href]",
     images: ".reading-content .page-break > img",
@@ -49,32 +33,6 @@ export const domain = {
     images: "#_imageList img",
     scrollToBottom: true,
   },
-  "ww2.jujustukaisen.com": {
-    chapters: "#Chapters_List > * ul li a[href]",
-    images: "main .entry-content img[src^=http]",
-
-    formatChapter: (chapter) => {
-      const v = chapter
-        .split("/")
-        .at(-2)
-        .match(/chapter-(.+)$/);
-      return v ? v[1] : v;
-    },
-    scrollToBottom: true,
-  },
-  "w33.jujmanga.com": {
-    chapters: "#Chapters_List > * ul li a[href]",
-    images: "main .entry-content img[src^=http]",
-
-    formatChapter: (chapter) => {
-      const v = chapter
-        .split("/")
-        .at(-2)
-        .match(/chapter-(.+)$/);
-      return v ? v[1].replace(/-2$/, "") : v;
-    },
-    scrollToBottom: true,
-  },
   "ciorti.online": {
     chapters: "#chapters-list a[href]",
     images: "body > .main-width > .imgholder[src]",
@@ -87,6 +45,14 @@ export const domain = {
   "www.mangaread.org": {
     chapters: ".page-content-listing .main a[href]",
     images: ".reading-content img[id^='image']",
+  },
+  "demonicscans.org": {
+    chapters: {
+      selector: "#chapters-list a[href]",
+      attachDomain: true,
+      labelMatch: /&chapter=(\d+)/,
+    },
+    images: "body > .main-width.center-m > img",
   },
 
   // ru
