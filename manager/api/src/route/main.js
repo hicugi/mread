@@ -53,8 +53,10 @@ export const getMangaInfo = async (req, res) => {
 
   const chapters = [];
   (content ? content.split(",") : []).forEach((item) => {
-    let label = item.split("/").at(-1);
-    label = label.replace(/^(\w|_|-)/ig, "");
+    let label = item.replace(/\/+$/, '').split("/").at(-1);
+    label = label.replace(/^([a-z]|_|-)+/ig, "");
+    label = label.replace(/([a-z]|_)+/ig, "-");
+    label = label.replace(/-{2,}/g, "-");
 
     const donePath = path.resolve(dirPath, label, MANGA_CHAPTER_DONE);
     let isDownloaded = false;

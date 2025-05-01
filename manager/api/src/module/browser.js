@@ -3,10 +3,13 @@ import fs from "fs";
 import { firefox } from "playwright";  // Or 'chromium' or 'firefox'.
 
 const wait = (timeout) => new Promise((ok) => setTimeout(ok, timeout));
+
 export const openPage = async (url, evaluateProps, options = {}) => {
   const browser = await firefox.launch({ headless: true });
   const context = await browser.newContext();
   const page = await context.newPage();
+
+  options.page = page;
 
   await page.setViewportSize({
     width: 1240,
@@ -47,7 +50,7 @@ export const openPage = async (url, evaluateProps, options = {}) => {
     result = Array.from(result);
   }
 
-  result = result.map(encodeURI);
+  result = result.map((s) => s.trim()).map(encodeURI);
 
   if (options.close !== undefined) {
     options.close().then(() => browser.close());
