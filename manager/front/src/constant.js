@@ -2,12 +2,11 @@ export const HOST_KEY = "host";
 
 export const getHost = () => localStorage.getItem(HOST_KEY);
 export const setHost = (value) => {
-  localStorage.setItem(HOST_KEY, value);
   api.host = value;
 }
 
 export const api = {
-  host: getHost(),
+  host: location.origin.replace(location.port, 3080),
 
   request(pathname, options = {}) {
     if (options.headers === undefined) {
