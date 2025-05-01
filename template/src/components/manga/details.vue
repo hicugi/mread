@@ -76,12 +76,12 @@ const downloadPercent = computed(() => {
 
 function handleRemoveManga() {
   if (confirm("Delete every chapter for current manga?")) {
-    flRemoveManga.postMessage(props.info.name);
+    flRemoveManga.postMessage(props.info.alias);
   }
 }
 
 async function download(list) {
-  const mangaName = props.info.alias;
+  const mangaAlias = props.info.alias;
   downloadStatus.value = {
     ...downloadStatus.value,
     total: list.length,
@@ -89,7 +89,7 @@ async function download(list) {
 
   if (!props.chapters.length) {
     const imgUrl = getUrl(props.info.image);
-    flSyncManga.postMessage([mangaName, imgUrl].join("|"));
+    flSyncManga.postMessage([mangaAlias, props.info.name, imgUrl].join("|"));
   }
 
   for (const chapter of list) {
@@ -99,7 +99,7 @@ async function download(list) {
       continue;
     }
 
-    const data = await fetchImages(mangaName, chapterName);
+    const data = await fetchImages(mangaAlias, chapterName);
     let imgIndex = 0;
     let loadingImagesCount = 0;
 
@@ -131,7 +131,7 @@ async function download(list) {
         imgIndex += 1;
 
         window.flDownloadImage.postMessage(
-          [url, mangaName, chapterName, fileName, data.length].join("|")
+          [url, mangaAlias, chapterName, fileName, data.length].join("|")
         );
       }, 200);
     });
@@ -145,7 +145,7 @@ async function download(list) {
   flFetchMangaList.postMessage("");
   await new Promise((ok) => setTimeout(ok, 300));
 
-  flSelectManga.postMessage(mangaName);
+  flSelectManga.postMessage(mangaAlias);
 }
 
 window.flInsertImage = (imageBase64) => {
@@ -219,13 +219,13 @@ watch(downloadStatus, (newVal, oldVal) => {
 });
 
 onMounted(() => {
-  const mangaName = props.info.alias;
+  const mangaAlias = props.info.alias;
 
   if (isApp) {
-    flSelectManga.postMessage(mangaName);
+    flSelectManga.postMessage(mangaAlias);
   }
 
-  api.get(`/chapters/${mangaName}`).then((data) => {
+  api.get(`/chapters/${mangaAlias}`).then((data) => {
     chaptersList.value = data;
   });
 });
