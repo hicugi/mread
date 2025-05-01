@@ -120,8 +120,9 @@ class _MyWebViewState extends State<ChildWidget> {
       ..addJavaScriptChannel(
         'flFetchMangaList',
         onMessageReceived: (JavaScriptMessage data) async {
-          General.innerDebug("Setting host in webview: $host");
-          _controller.runJavaScript("flSetHost('$host');");
+          String currentHost = await MyHtml.getHost();
+          General.innerDebug("Setting host in webview: $currentHost");
+          _controller.runJavaScript("flSetHost('$currentHost');");
           await _insertMangaList();
         },
       )
@@ -266,11 +267,7 @@ class _MyWebViewState extends State<ChildWidget> {
   }
 
   Future<void> _insertMangaList() async {
-    callback(String str) {
-      General.innerDebug(str);
-      _controller.runJavaScript(str);
-    }
-    await Manga.runScriptForMangaList(callback);
+    await Manga.runScriptForMangaList(_controller.runJavaScript);
   }
 
   Future<void> _syncChapters(String name) async {
