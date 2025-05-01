@@ -1,1 +1,0 @@
-/home/mag/app/mread/project/flutter/build/app/intermediates/cxx/Debug/1o6n6o2v/obj/x86
