@@ -49,7 +49,8 @@ export const getImages = async (dir, link, update) => {
 
       if (imagesResponse[url] === undefined) return;
 
-      await res.finished();
+      const isOk = await res.finished().then(() => true).catch(() => false);
+      if (!isOk) return;
 
       const fileName = imagesList.indexOf(url);
       const filePath = path.resolve(dir, String(fileName));
@@ -93,6 +94,36 @@ export const getImages = async (dir, link, update) => {
   imagesResponse.isReady = true;
 
   update("got body", { list: imagesList, wiatingForResponse: imagesResponse });
+
+  // scroll down for every 2 sec to load more images
+  const interval = setInterval(async () => {
+    if (isFinished) {
+      clearInterval(interval);
+      return;
+    }
+
+    try {
+      const { page } = options;
+      await page.keyboard.press("PageDown");
+    } catch {
+      clearInterval(interval);
+    }
+  }, 2000);
+
+  // reload page after 25 sec
+  const interval2 = setInterval(async () => {
+    if (isFinished) {
+      clearInterval(interval2);
+      return;
+    }
+
+    try {
+      const { page } = options;
+      await page.reload();
+    } catch {
+      clearInterval(interval2);
+    }
+  }, 25 * 1000);
 
   await waitFor(() => {
     let count = 0;

@@ -44,18 +44,28 @@ onMounted(() => {
 <template>
   <h2>Directory: {{ $route.params.name }}</h2>
 
-  <template v-if="info">
-    <h3>Name: {{ info.name }}</h3>
-    <div class="p-manga__image" :style="imageBg" />
+  <div v-if="info" class="p-manga">
+    <div>
+      <h3>Name: {{ info.name }}</h3>
+      <div class="p-manga__image" :style="imageBg" />
+    </div>
 
-    <UiButton type="button" @click="checkChapters">Check chapters</UiButton>
+    <div>
+      <UiButton type="button" @click="checkChapters">Check chapters</UiButton>
 
-    <h2>Chapters:</h2>
-    <ChaptersList :items="chapters" />
-  </template>
+      <h2>Chapters:</h2>
+      <ChaptersList :items="chapters" />
+    </div>
+  </div>
 </template>
 
 <style>
+.p-manga {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 40px;
+}
+
 .p-manga__image {
   max-width: 440px;
   aspect-ratio: 9/12;
