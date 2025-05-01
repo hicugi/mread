@@ -131,6 +131,12 @@ export const mangaDownloadImages = async (req, res) => {
     sendMessage(data);
     res.end();
   }
+  const successResponse = (data) => {
+    response({
+      status: "ok",
+      data,
+    });
+  }
 
   if (await fs.stat(donePath).catch(() => false)) {
     successResponse();
@@ -144,19 +150,17 @@ export const mangaDownloadImages = async (req, res) => {
     data: { path: chapterPath },
   });
 
-  const list = await getImages(chapterPath, link, (status, data = {}) => {
+  await getImages(chapterPath, link, (status, data = {}) => {
     sendMessage({
       status,
       data
     });
   })
-    .then(async () => {
+    .then(async (data) => {
       await fs.writeFile(donePath, "");
-      response({
-        status: "ok",
-        list,
-      });
+      successResponse(data);
     }).catch((error) => {
+      console.error(error);
       response({
         status: "error",
         error,
