@@ -60,7 +60,7 @@ export const getMangaInfo = async (req, res) => {
       domainConfig = domain[url.host];
     }
 
-    const label = getChapterLabel(item, domainConfig.chapters?.labelMatch);
+    const label = getChapterLabel(item);
 
     const donePath = path.resolve(dirPath, label, MANGA_CHAPTER_DONE);
     let isDownloaded = false;

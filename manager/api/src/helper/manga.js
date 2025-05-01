@@ -1,12 +1,20 @@
+import { domain } from "../config.js";
+
 export const getMangaImage = (req, dir) => {
   const { host } = req.headers;
   return `http://${host}/manga/${dir}/image`;
 }
 
-export const getChapterLabel = (link, match) => {
-  if (match !== undefined) { 
-    const val = link.match(match);
+export const getChapterLabel = (link) => {
+  const { chapters } = domain.get(link);
+
+  if (chapters.labelMatch !== undefined) {
+    const val = link.match(chapters.labelMatch);
     return val[1];
+  }
+
+  if (chapters.formatLabel !== undefined) {
+    return chapters.formatLabel(link);
   }
 
   let label = link;

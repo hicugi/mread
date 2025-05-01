@@ -43,7 +43,13 @@ export const domain = {
     },
   },
   "www.mangaread.org": {
-    chapters: ".page-content-listing .main a[href]",
+    chapters: {
+      selector: ".page-content-listing .main a[href]",
+      formatLabel: (link) => {
+        const v = link.match(/chapter-([\d-]+)/);
+        return v[1].replace(/-+$/g, '');
+      },
+    },
     images: ".reading-content img[id^='image']",
   },
   "demonicscans.org": {
