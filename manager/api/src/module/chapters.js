@@ -20,6 +20,7 @@ export const getChapters = async (link) => {
   };
 
   let data = await openPage(link, [evaluate, selector], browserOptions);
+  data = data.map((v) => v.trim());
 
   if (!isString) {
     if (chapters.attachDomain) {
