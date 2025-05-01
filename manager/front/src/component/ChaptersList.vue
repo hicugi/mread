@@ -27,27 +27,38 @@ async function downloadChapter(item) {
 
   return new Promise((resolved) => {
     const close = api.active(`/manga/${name}/download/chapter?${query}`, (data) => {
-      if (data.status != "ok") {
-        let message = data.status;
+      switch (data.status) {
+        case "ok":
+          close();
+          resolved();
 
-        switch (data.status) {
-          case "got images":
-            message += " " + data.data.current + " / " + data.data.total;
-            break
-        }
+          downloadedMemo.value = {
+            ...downloadedMemo.value,
+            [label]: true,
+          };
+          currentStatus.value = `DONE: ${label}`;
+          break;
 
-        currentStatus.value = `Downloading: ${label} - ${message}`;
-        return;
+        case "error":
+          close();
+          resolved();
+
+          currentStatus.value = `ERROR: ${data.error}`;
+          break;
+
+        default:
+          let message = data.status;
+
+          switch (data.status) {
+            case "got images":
+              message += " " + data.data.current + " / " + data.data.total;
+              break
+          }
+
+          currentStatus.value = `Downloading: ${label} - ${message}`;
+          return;
       }
 
-      close();
-      resolved();
-
-      downloadedMemo.value = {
-        ...downloadedMemo.value,
-        [label]: true,
-      };
-      currentStatus.value = "";
     });
   });
 }

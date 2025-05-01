@@ -2,9 +2,9 @@ import path from "path";
 import mainFs from "fs";
 import fs from "fs/promises";
 
-import { MANGA_DIR, MANGA_META_FILENAME, MANGA_COOVER, MANGA_CHAPTERS, MANGA_CHAPTER_DONE } from "../config.js";
+import { MANGA_DIR, MANGA_META_FILENAME, MANGA_COOVER, MANGA_CHAPTERS, MANGA_CHAPTER_DONE, domain } from "../config.js";
 import metaConverter from "../helper/metaConverter.js";
-import { getMangaImage, getChapterNumber } from "../helper/manga.js";
+import { getMangaImage, getChapterLabel, getChapterNumber } from "../helper/manga.js";
 import { getInfo, getImages } from "../module/manga.js";
 import { getChapters } from "../module/chapters.js";
 import { activeConnect } from "../module/network.js";
@@ -51,12 +51,16 @@ export const getMangaInfo = async (req, res) => {
   const chaptersFile = path.resolve(dirPath, MANGA_CHAPTERS);
   const content = await fs.readFile(chaptersFile, "utf-8").catch(() => null);
 
+  let domainConfig = null;
+
   const chapters = [];
   (content ? content.split(",") : []).forEach((item) => {
-    let label = item.replace(/\/+$/, '').split("/").at(-1);
-    label = label.replace(/^([a-z]|_|-)+/ig, "");
-    label = label.replace(/([a-z]|_)+/ig, "-");
-    label = label.replace(/-{2,}/g, "-");
+    if (domainConfig === null) {
+      const url = new URL(item);
+      domainConfig = domain[url.host];
+    }
+
+    const label = getChapterLabel(item, domainConfig.chapters?.labelMatch);
 
     const donePath = path.resolve(dirPath, label, MANGA_CHAPTER_DONE);
     let isDownloaded = false;
@@ -123,11 +127,8 @@ export const mangaDownloadImages = async (req, res) => {
 
   const sendMessage = activeConnect(req, res);
 
-  const successResponse = (data = []) => {
-    sendMessage({
-      status: "ok",
-      data,
-    });
+  const response = (data) => {
+    sendMessage(data);
     res.end();
   }
 
@@ -148,8 +149,17 @@ export const mangaDownloadImages = async (req, res) => {
       status,
       data
     });
-  });
-  await fs.writeFile(donePath, "");
-
-  successResponse(list);
+  })
+    .then(async () => {
+      await fs.writeFile(donePath, "");
+      response({
+        status: "ok",
+        list,
+      });
+    }).catch((error) => {
+      response({
+        status: "error",
+        error,
+      });
+    });
 }

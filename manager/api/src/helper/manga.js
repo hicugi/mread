@@ -3,6 +3,21 @@ export const getMangaImage = (req, dir) => {
   return `http://${host}/manga/${dir}/image`;
 }
 
+export const getChapterLabel = (link, match) => {
+  if (match !== undefined) { 
+    const val = link.match(match);
+    return val[1];
+  }
+
+  let label = link;
+  label = label.replace(/\/+$/, '').split("/").at(-1);
+  label = label.replace(/^([a-z]|_|-)+/ig, "");
+  label = label.replace(/([a-z]|_)+/ig, "-");
+  label = label.replace(/-{2,}/g, "-");
+
+  return label;
+}
+
 export const getChapterNumber = (str) => {
   let res = "";
   if (Number(str) >= 0) {

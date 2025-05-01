@@ -7,6 +7,7 @@
   },
   "dependencies": {
     "api": "file:./api",
+    "dotenv": "^16.5.0",
     "front": "file:./front"
   }
 }
