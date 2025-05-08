@@ -2,6 +2,7 @@
 import { ref, computed, defineProps, defineEmits, onMounted } from "vue";
 
 import Card from "./card.vue";
+import UiButton from "../ui/Button.vue"
 import { isApp, HOST_URL_KEY } from "../../helper/main";
 import { api } from "../../api";
 
@@ -20,13 +21,18 @@ const filteredItems = computed(() => {
   return items.value.filter((item) => skip[item.name] === undefined);
 });
 
-function clearCache() {
-  if (confirm("Remove everything?")) {
+function clearTemplate() {
+  if (confirm("Clear template?")) {
+    flClearCache.postMessage("");
+    return;
+  }
+}
+
+function clearAll() {
+  if (confirm("Remove & Clear everything?")) {
     flRemoveAll.postMessage("");
     return;
   }
-
-  flClearCache.postMessage("");
 }
 
 onMounted(async () => {
@@ -43,9 +49,13 @@ onMounted(async () => {
     });
   }
 
-  api.get("/list").then((data) => {
-    items.value = data;
-  });
+  api.get("/list")
+    .then((data) => {
+      items.value = data;
+    })
+    .catch((err) => {
+      console.error(err);
+    });;
 });
 
 const emit = defineEmits(["select", "continue"]);
@@ -80,9 +90,10 @@ const emit = defineEmits(["select", "continue"]);
       />
     </div>
 
-    <button class="c-mangaList__cache-btm" type="button" @click="clearCache">
-      clear cache
-    </button>
+    <footer class="c-mangaList__footer">
+      <UiButton type="button" @click="clearTemplate">update template</UiButton>
+      <UiButton variant="danger" @click="clearAll">clear all cache</UiButton>
+    </footer>
   </section>
 </template>
 
@@ -117,5 +128,14 @@ const emit = defineEmits(["select", "continue"]);
   padding: 20px 0;
   width: 100%;
   display: block;
+}
+
+.c-mangaList__footer {
+  padding-top: 30px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 14px;
 }
 </style>
