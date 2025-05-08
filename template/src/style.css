@@ -1,3 +1,7 @@
+:root {
+  --color-danger: #eb3349;
+}
+
 html,
 body {
   min-height: 100vh;
