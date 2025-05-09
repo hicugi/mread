@@ -7,6 +7,7 @@ import 'package:http/http.dart' as http;
 // For the File type
 import 'dart:io';
 import 'dart:convert';
+import 'dart:math';
 
 class General {
   static void innerDebug(String value) {
@@ -32,15 +33,15 @@ class General {
     Iterable result = dirItems.map((v) {
       String alias = v.path.split("/").last;
 
-      RegExp exp = RegExp(r'(^\d+)');
-      RegExpMatch? match = exp.firstMatch(alias);
+      var n = 0.0;
+      var i = 0;
 
-      var n = double.parse(match![0]!);
-      var n2 = alias.split('-');
-
-      if (n2.length > 1) {
-        n += double.parse(n2[1]) / 100000;
-      }
+      final rgx = RegExp(r'(\d+)');
+      rgx.allMatches(val).forEach((g) {
+        var s = g.group(0);
+        n = n + (double.parse(s!) * pow(0.0001, i));
+        i += 1;
+      });
 
       return {
         'dir': v,

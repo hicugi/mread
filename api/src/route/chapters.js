@@ -51,7 +51,7 @@ export const getChapters = async (req, res) => {
 
     return Number((v.match(/(\d+)/) || [])[1]) || v;
   };
-  result.sort((a, b) => format(b.name) - format(a.name));
+  result.sort((a, b) => format(a.name) - format(b.name));
 
   res.send(result);
 };
