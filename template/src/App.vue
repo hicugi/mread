@@ -34,7 +34,7 @@ window.flInsertManga = (chapter) => {
   listOnDevice.value.push(chapter);
 };
 window.flSyncChapters = (data) => {
-  chaptersOnDevice.value = data;
+  chaptersOnDevice.value = data.reverse();
 };
 
 function handleSelect(item, chapter) {

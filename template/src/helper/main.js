@@ -13,14 +13,3 @@ export const fetchImages = (name, chapter) => {
   return api.get(`/images/${name}/${chapter}`);
 };
 
-export const chaptersSort = () => {
-  const format = (d) => {
-    const ar = d.split("-");
-    if (ar.length === 1) {
-      return Number(d);
-    }
-
-    return ar[0] + ar[1] / 100000;
-  };
-  return (a, b) => format(b.name) - format(a.name);
-};

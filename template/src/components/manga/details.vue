@@ -8,7 +8,7 @@ import UiButton from "../ui/Button.vue";
 import ChapterImage from "./chapter/images.vue";
 
 import { api } from "../../api";
-import { chaptersSort, fetchImages, isApp } from "../../helper/main.js";
+import { fetchImages, isApp } from "../../helper/main.js";
 
 const props = defineProps({
   info: {
@@ -27,11 +27,7 @@ const downloadStatus = ref({ current: 0, total: 0 });
 const downloadImageStatus = ref({ current: 0, total: 0 });
 const images = ref([]);
 
-const chaptersList1 = computed(() => {
-  const result = props.chapters.slice();
-  result.sort(chaptersSort());
-  return result;
-});
+const chaptersList1 = computed(() => props.chapters);
 const chaptersList2 = computed(() => {
   const skip = {};
   for (const item of props.chapters) {
@@ -59,11 +55,7 @@ const allChapters = computed(() => {
   const filteredItems = onlineItems.filter(
     (item) => localKeys[item.name] === undefined
   );
-  const result = [...filteredItems, ...localItems];
-
-  result.sort(chaptersSort());
-
-  return result;
+  return [...localItems, ...filteredItems];
 });
 const lastReadChapter = computed(() => {
   return props.chapters.find((item) => item.isContinue);
@@ -220,13 +212,18 @@ function backFromChapter() {
   selectedChapter.value = null;
 }
 
+const setOverflow = (val) => {
+  document.body.style.overflow = val;
+  document.querySelector("html").style.overflow = val;
+}
 watch(downloadStatus, (newVal, oldVal) => {
   if (!oldVal.total && newVal.total) {
-    document.body.style.overflowY = "hidden";
+    document.body.style.overflow = "hidden";
+    setOverflow("hidden");
     return;
   }
 
-  document.body.style.overflowY = "";
+  setOverflow("");
 });
 
 onMounted(() => {
@@ -237,7 +234,7 @@ onMounted(() => {
   }
 
   api.get(`/chapters/${mangaAlias}`).then((data) => {
-    chaptersList.value = data;
+    chaptersList.value = data.reverse();
   });
 });
 
