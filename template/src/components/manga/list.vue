@@ -71,7 +71,7 @@ const emit = defineEmits(["select", "continue"]);
       <div class="c-mangaList-items">
         <Card
           v-for="(item, index) of listOnDevice"
-          :key="`device${index}`"
+          :key="`device${item.alias}`"
           v-bind="item"
           @select="() => emit('select', item)"
           @continue="(chapterName) => emit('continue', item.name, chapterName)"
@@ -84,7 +84,7 @@ const emit = defineEmits(["select", "continue"]);
     <div class="c-mangaList-items">
       <Card
         v-for="(item, index) of filteredItems"
-        :key="index"
+        :key="`online${item.alias}`"
         v-bind="item"
         @select="() => emit('select', item)"
       />
@@ -131,11 +131,9 @@ const emit = defineEmits(["select", "continue"]);
 }
 
 .c-mangaList__footer {
-  padding-top: 30px;
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  align-items: center;
+  padding: 30px 15px 20px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   gap: 14px;
 }
 </style>
