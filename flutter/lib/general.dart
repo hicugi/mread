@@ -37,7 +37,7 @@ class General {
       var i = 0;
 
       final rgx = RegExp(r'(\d+)');
-      rgx.allMatches(v).forEach((g) {
+      rgx.allMatches(alias).forEach((g) {
         var s = g.group(0);
         n = n + (double.parse(s!) * pow(0.0001, i));
         i += 1;
