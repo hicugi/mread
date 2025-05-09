@@ -24,6 +24,7 @@ const getUrl = inject("getUrl");
 const chaptersList = ref([]);
 const selectedChapter = ref(null);
 const downloadStatus = ref({ current: 0, total: 0 });
+const downloadImageStatus = ref({ current: 0, total: 0 });
 const images = ref([]);
 
 const chaptersList1 = computed(() => {
@@ -68,10 +69,20 @@ const lastReadChapter = computed(() => {
   return props.chapters.find((item) => item.isContinue);
 });
 
-const downloadPercent = computed(() => {
-  const { current, total } = downloadStatus.value;
-  const res = current / (total / 100);
-  return res.toFixed(2);
+const getProgressStyle = (obj) => {
+  const { current, total } = obj;
+  const val = ((current / (total / 100)) * 0.01).toFixed(5);
+
+  return {
+    transform: `scaleX(${val})`,
+  }
+}
+
+const downloadProgressStyle = computed(() => {
+  return getProgressStyle(downloadStatus.value);
+});
+const downloadImageProgressStyle = computed(() => {
+  return getProgressStyle(downloadImageStatus.value);
 });
 
 function handleRemoveManga() {
@@ -82,10 +93,7 @@ function handleRemoveManga() {
 
 async function download(list) {
   const mangaAlias = props.info.alias;
-  downloadStatus.value = {
-    ...downloadStatus.value,
-    total: list.length,
-  };
+  downloadStatus.value.total = list.length;
 
   if (!props.chapters.length) {
     const imgUrl = getUrl(props.info.image);
@@ -100,21 +108,24 @@ async function download(list) {
     }
 
     const data = await fetchImages(mangaAlias, chapterName);
+    downloadImageStatus.value = {
+      current: 0,
+      total: data.length,
+    };
+
     let imgIndex = 0;
     let loadingImagesCount = 0;
 
     window.flImageDownloaded = () => {
       loadingImagesCount -= 1;
+      downloadImageStatus.value.current = downloadImageStatus.value.current + 1;
     };
 
     await new Promise((resolve) => {
       const imgsInterval = setInterval(() => {
         if (data[imgIndex] === undefined) {
           if (loadingImagesCount === 0) {
-            downloadStatus.value = {
-              ...downloadStatus.value,
-              current: downloadStatus.value.current + 1,
-            };
+            downloadStatus.value.current = downloadStatus.value.current + 1;
 
             clearInterval(imgsInterval);
             resolve();
@@ -293,7 +304,8 @@ const $emit = defineEmits(["back"]);
   <div v-if="downloadStatus.total" className="c-details__download">
     <div>
       {{ downloadStatus.current + " / " + downloadStatus.total }}
-      <span :style="{width: downloadPercent + '%'}" />
+      <span :style="downloadProgressStyle" />
+      <span :style="downloadImageProgressStyle" />
     </div>
   </div>
 </template>
@@ -338,7 +350,17 @@ const $emit = defineEmits(["back"]);
   position: absolute;
   top: 0;
   left: 0;
+  width: 100%;
   height: 100%;
   background-color: #1a1a1a;
+  transform-origin: left center;
+  transition: easy-out 0.2s;
+  will-change: transform;
+}
+.c-details__download span:last-child {
+  top: auto;
+  bottom: 0;
+  height: 10%;
+  background-color: #fff;
 }
 </style>
