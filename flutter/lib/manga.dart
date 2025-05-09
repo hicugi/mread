@@ -3,6 +3,7 @@ import './general.dart';
 
 const String MANGA_INFO = "-meta";
 const String MANGA_COVER = "-cover.jpg";
+const String MANGA_SAVE = "-save";
 
 class Manga {
   static Future<Directory> getMangaDir() async {
@@ -15,6 +16,35 @@ class Manga {
     }
 
     return result;
+  }
+
+  static Future<String> getLastReadedChapter(String alias) async {
+    Directory mangaDir = await getMangaDir();
+    File saveFile = File("${mangaDir.path}/$alias/$MANGA_SAVE");
+
+    if (saveFile.existsSync()) {
+      String chapter = await saveFile.readAsString();
+      return chapter;
+    }
+
+    return "";
+  }
+  static saveLastReadedChapter(String alias, String chapter) async {
+    Directory listDir = await getMangaDir();
+    Directory mangaDir = await Directory("${listDir.path}/$alias");
+
+    if (!mangaDir.existsSync()) {
+      return;
+    }
+
+    File saveFile = File("${mangaDir.path}/$MANGA_SAVE");
+
+    if (!saveFile.existsSync()) {
+      saveFile.create();
+    }
+
+    saveFile.writeAsStringSync(chapter);
+    General.innerDebug("Last readed chapter saved $chapter");
   }
 
   static Future<Map<String, dynamic>> getChapterDetails(String name, String chapter) async {
@@ -61,12 +91,9 @@ class Manga {
 
         General.innerDebug("Inserting locale manga: $alias $name");
 
-        String savedChapter = '';
-        File saveFile = File("${manga.path}/save");
-
-        if (saveFile.existsSync()) {
-          String chapter = saveFile.readAsStringSync();
-          savedChapter = ", currentChapter: '$chapter'";
+        String savedChapter = await getLastReadedChapter(name);
+        if (savedChapter != "") {
+          savedChapter = ", currentChapter: '$savedChapter'";
         }
 
         String insertData = "{ name: '$name', alias: '$alias', image: '$image'$savedChapter }";
@@ -74,5 +101,28 @@ class Manga {
 
         callback("flInsertManga($insertData);");
       });
+  }
+
+  static runScriptForInsertingImgs(String name, String chapter, callback) async {
+    Directory mangaDir = await Manga.getMangaDir();
+    Directory chapterDir = Directory("${mangaDir.path}/$name/$chapter");
+
+    // create save file
+    saveLastReadedChapter(name, chapter);
+
+    Iterable items = General.getDirSortedItems(chapterDir
+        .listSync()
+        .where((element) => element.path.split('/').last != 'done'));
+
+    for (var i = 0; i < items.length; i++) {
+      var item = items.elementAt(i);
+      var image = item['dir'];
+
+      String imageBase64 = await General.getImageBase64(image.path);
+
+      callback(
+        "flInsertImage('$imageBase64');",
+      );
+    }
   }
 }

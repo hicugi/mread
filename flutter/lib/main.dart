@@ -142,35 +142,8 @@ class _MyWebViewState extends State<ChildWidget> {
       // read chapter
       ..addJavaScriptChannel('flInsertImgsFromChapter',
           onMessageReceived: (JavaScriptMessage data) async {
-        var [name, chapter] = data.message.split("|");
-
-        Directory mangaDir = await Manga.getMangaDir();
-        Directory chapterDir = Directory("${mangaDir.path}/$name/$chapter");
-
-        // create save file
-        File saveFile = File("${mangaDir.path}/save");
-
-        if (!saveFile.existsSync()) {
-          saveFile.create();
-        }
-
-        saveFile.writeAsStringSync(chapter);
-        General.innerDebug("Last readed chapter $chapter");
-
-        Iterable items = General.getDirSortedItems(chapterDir
-            .listSync()
-            .where((element) => element.path.split('/').last != 'done'));
-
-        for (var i = 0; i < items.length; i++) {
-          var item = items.elementAt(i);
-          var image = item['dir'];
-
-          String imageBase64 = await General.getImageBase64(image.path);
-
-          _controller.runJavaScript(
-            "flInsertImage('$imageBase64');",
-          );
-        }
+        var [name, chapter] = data.message.split('|');
+        Manga.runScriptForInsertingImgs(name, chapter, _controller.runJavaScript);
       })
 
       // download chapter
@@ -285,7 +258,7 @@ class _MyWebViewState extends State<ChildWidget> {
       return;
     }
 
-    File saveFile = File("${mangaDir.path}/save");
+    File saveFile = File("${mangaDir.path}/$name/$MANGA_SAVE");
     String lastReadedChapter = "";
 
     if (saveFile.existsSync()) {

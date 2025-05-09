@@ -249,17 +249,13 @@ const $emit = defineEmits(["back"]);
   <div v-show="!selectedChapter">
     <MangaHeader :title="info.name" @back="$emit('back')" />
 
-    <h2>Chapters</h2>
-
     <template v-if="chapters.length">
       <h2>On device:</h2>
 
-      <UiButton
-        v-if="lastReadChapter"
-        @click="handleSelectChapter(lastReadChapter)"
-        >Continue</UiButton
-      >
-      <UiButton v-if="isApp" @click="handleRemoveManga">Remove manga</UiButton>
+      <div class="c-details__controls">
+        <UiButton v-if="isApp" @click="handleRemoveManga">Remove manga</UiButton>
+        <UiButton v-if="lastReadChapter" @click="handleSelectChapter(lastReadChapter)">Continue {{ lastReadChapter.name }}</UiButton>
+      </div>
 
       <ChapterList
         key="listOnDevice"
@@ -268,7 +264,7 @@ const $emit = defineEmits(["back"]);
         @download="handleDownload"
       />
 
-      <h2>Online:</h2>
+      <h2 v-if="chaptersList2.length">Online:</h2>
     </template>
 
     <ChapterList
@@ -308,6 +304,13 @@ const $emit = defineEmits(["back"]);
 </template>
 
 <style>
+.c-details__controls {
+  margin-bottom: 20px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
 .c-details__download {
   position: fixed;
   top: 0;
