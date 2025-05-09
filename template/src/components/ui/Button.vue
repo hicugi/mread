@@ -14,10 +14,9 @@ const { variant } = defineProps({
 
 <style>
 .ui-button {
-  padding: 12px 15px;
-  width: 100%;
-  max-width: 210px;
-  display: block;
+  padding: 10px 16px;
+  border: none;
+  display: inline-block;
 }
 
 .ui-button_variant-danger {
