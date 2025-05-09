@@ -1,5 +1,7 @@
 import path from "path";
 import fs from "fs/promises";
+import fsMain from "fs";
+import https from "https";
 
 import { MANGA_DIR, MANGA_META_FILENAME, MANGA_COOVER, domain } from "../config.js";
 import metaConverter from "../helper/metaConverter.js";
@@ -54,8 +56,33 @@ export const getImages = async (dir, link, update) => {
 
       const fileName = imagesList.indexOf(url);
       const filePath = path.resolve(dir, String(fileName));
-      const content = await res.body();
-      await fs.writeFile(filePath, content, "base64");
+      const content = await res.body()
+        .catch((error) => {
+          return new Promise((resolve, reject) => {
+            https.get(url, (r) => {
+              const size = r.headers["content-length"];
+
+              if (r.statusCode !== 200) {
+                r.resume();
+                return reject(error);
+              }
+
+              r.pipe(fsMain.createWriteStream(filePath))
+                .on('error', reject)
+                .once("close", () => resolve(true));
+            });
+          });
+        })
+        .catch((err) => {
+          console.log(filePath + ': ');
+          console.error(err);
+          return null;
+      });
+
+      if (content === null) return;
+      if (!(content === true)) {
+        await fs.writeFile(filePath, content, "base64");
+      }
 
       imagesResponse[url] = true;
 
