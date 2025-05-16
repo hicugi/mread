@@ -20,7 +20,10 @@ export const openPage = async (url, evaluateProps, options = {}) => {
     page.on("response", options.onResponse);
   }
 
-  const gotoOptions = {};
+  const gotoOptions = {
+    waitUntil: "domcontentloaded",
+    timeout: 2 * 60 * 1000,
+  };
   if (options.gotoOptions != undefined) {
     Object.assign(gotoOptions, options.gotoOptions);
   }

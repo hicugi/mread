@@ -85,7 +85,6 @@ async function downloadChapter(item) {
   padding: 0;
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
   list-style: none;
 }
 
@@ -104,8 +103,10 @@ async function downloadChapter(item) {
   position: absolute;
   bottom: 0;
   width: 100%;
-  height: 6px;
+  height: 100%;
   background-color: green;
+  opacity: 0.3;
+  pointer-events: none;
   content: "";
 }
 

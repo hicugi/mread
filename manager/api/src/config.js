@@ -108,6 +108,15 @@ export const domain = {
       }),
     },
   },
+  "sousou-no-frieren.com": {
+    chapters: {
+      selector: ".su-posts a[href]",
+      formatLabel: (link) => {
+        return link.replace(/\/$/, '').replace(/.+?chapter-/, '').replace(/[a-z]+/g, '').replace(/-+$/, '');
+      }
+    },
+    images: ".entry-content .wp-block-image img[src]"
+  },
 
   get(url) {
     const urlData = new URL(url);
