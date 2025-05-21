@@ -8,6 +8,7 @@ import { api } from '../constant.js';
 
 const route = useRoute();
 const info = ref(null);
+const isChaptersLoading = ref(false);
 const chapters = ref([]);
 
 const imageBg = computed(() => {
@@ -20,11 +21,14 @@ const imageBg = computed(() => {
 });
 
 function fetchChapters() {
+  isChaptersLoading.value = true;
   const { name } = route.params;
 
   api.get(`/manga/${name}`).then((data) => {
     info.value = data;
     chapters.value = data.chapters;
+  }).finally(() => {
+    isChaptersLoading.value = false;
   });
 }
 
@@ -51,7 +55,7 @@ onMounted(() => {
     </div>
 
     <div>
-      <UiButton type="button" @click="checkChapters">Check chapters</UiButton>
+      <UiButton type="button" :disabled="isChaptersLoading" @click="checkChapters">Check chapters</UiButton>
 
       <h2>Chapters:</h2>
       <ChaptersList :items="chapters" />
