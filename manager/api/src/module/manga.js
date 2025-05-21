@@ -58,23 +58,11 @@ export const getImages = async (dir, link, update) => {
       const filePath = path.resolve(dir, String(fileName));
       const content = await res.body()
         .catch((error) => {
-          return new Promise((resolve, reject) => {
-            https.get(url, (r) => {
-              const size = r.headers["content-length"];
-
-              if (r.statusCode !== 200) {
-                r.resume();
-                return reject(error);
-              }
-
-              r.pipe(fsMain.createWriteStream(filePath))
-                .on('error', reject)
-                .once("close", () => resolve(true));
-            });
-          });
+          console.warn(url + ": couldn't download through onResponse");
+          return downloadFromUlr(url, filePath);
         })
         .catch((err) => {
-          console.log(filePath + ': ');
+          console.log(filePath + ": couldn't download throught https request");
           console.error(err);
           return null;
       });
