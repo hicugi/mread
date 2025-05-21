@@ -1,5 +1,6 @@
 import path from "path";
 import fs from "fs/promises";
+import fsMain from "fs";
 
 export const removeDir = async (dir) => {
   const openedDir = await fs.readdir(dir, { withFileTypes: true, recursive: true });
@@ -20,4 +21,25 @@ export const removeDir = async (dir) => {
     await fs.unlink(item.path);
   }
   await fs.unlink(dir);
+}
+
+/**
+ * @param {string} url
+ * @param {string} filePath 
+*/
+export async function downloadFromUlr(url, filePath) {
+  return new Promise((resolve, reject) => {
+    https.get(url, (r) => {
+      const size = r.headers["content-length"];
+
+      if (r.statusCode !== 200) {
+        r.resume();
+        return reject(error);
+      }
+
+      r.pipe(fsMain.createWriteStream(filePath))
+        .on('error', reject)
+        .once("close", () => resolve(true));
+    });
+  });
 }
