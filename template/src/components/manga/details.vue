@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, defineProps, inject, watch, onMounted, onUnmounted } from "vue";
+import { ref, computed, defineProps, inject, useTemplateRef, onMounted } from "vue";
 
 import MangaHeader from "./header.vue";
 import ChapterList from "./chapterList.vue";
@@ -10,21 +10,20 @@ import ChapterImage from "./chapter/images.vue";
 import { api } from "../../api";
 import { fetchImages, isApp } from "../../helper/main.js";
 
+const myElm = useTemplateRef("myElm");
 const props = defineProps({
   info: {
     name: String,
+    alias: String,
     image: String,
     chapter: String,
   },
   chapters: Array,
+  downloading: Boolean,
 });
-
-const getUrl = inject("getUrl");
 
 const chaptersList = ref([]);
 const selectedChapter = ref(null);
-const downloadStatus = ref({ current: 0, total: 0 });
-const downloadImageStatus = ref({ current: 0, total: 0 });
 const images = ref([]);
 
 const chaptersList1 = computed(() => props.chapters);
@@ -61,97 +60,36 @@ const lastReadChapter = computed(() => {
   return props.chapters.find((item) => item.isContinue);
 });
 
-const getProgressStyle = (obj) => {
-  const { current, total } = obj;
-  const val = ((current / (total / 100)) * 0.01).toFixed(5);
-
-  return {
-    transform: `scaleX(${val})`,
-  }
-}
-
-const downloadProgressStyle = computed(() => {
-  return getProgressStyle(downloadStatus.value);
-});
-const downloadImageProgressStyle = computed(() => {
-  return getProgressStyle(downloadImageStatus.value);
-});
-
 function handleRemoveManga() {
   if (confirm("Delete every chapter for current manga?")) {
     flRemoveManga.postMessage(props.info.alias);
   }
 }
 
+const $emit = defineEmits(["back", "download"]);
+
 async function download(list) {
-  const mangaAlias = props.info.alias;
-  downloadStatus.value.total = list.length;
+  const { alias, name, image, } = props.info;
 
-  if (!props.chapters.length) {
-    const imgUrl = getUrl(props.info.image);
-    flSyncManga.postMessage([mangaAlias, props.info.name, imgUrl].join("|"));
-  }
+  $emit("download", {
+    name,
+    alias,
+    image,
+    chapters: list,
 
-  for (const chapter of list) {
-    const chapterName = chapter.name;
+    callback: async () => {
+      if (!myElm || selectedChapter) return;
 
-    if (!chapter || chapter.isDownloaded) {
-      continue;
+      flFetchMangaList.postMessage("");
+      await new Promise((ok) => setTimeout(ok, 300));
+
+      flSelectManga.postMessage(mangaAlias);
     }
-
-    const data = await fetchImages(mangaAlias, chapterName);
-    downloadImageStatus.value = {
-      current: 0,
-      total: data.length,
-    };
-
-    let imgIndex = 0;
-    let loadingImagesCount = 0;
-
-    window.flImageDownloaded = () => {
-      loadingImagesCount -= 1;
-      downloadImageStatus.value.current = downloadImageStatus.value.current + 1;
-    };
-
-    await new Promise((resolve) => {
-      const imgsInterval = setInterval(() => {
-        if (data[imgIndex] === undefined) {
-          if (loadingImagesCount === 0) {
-            downloadStatus.value.current = downloadStatus.value.current + 1;
-
-            clearInterval(imgsInterval);
-            resolve();
-            return;
-          }
-          return;
-        }
-
-        if (loadingImagesCount >= 4) return;
-        loadingImagesCount += 1;
-
-        const url = getUrl(data[imgIndex]);
-        const fileName = url.split("/").at(-1);
-        imgIndex += 1;
-
-        window.flDownloadImage.postMessage(
-          [url, mangaAlias, chapterName, fileName, data.length].join("|")
-        );
-      }, 200);
-    });
-  }
-
-  downloadStatus.value = {
-    current: 0,
-    total: 0,
-  };
-
-  flFetchMangaList.postMessage("");
-  await new Promise((ok) => setTimeout(ok, 300));
-
-  flSelectManga.postMessage(mangaAlias);
+  });
 }
 
 window.flInsertImage = (imageBase64) => {
+  if (!myElm) return;
   images.value.push(imageBase64);
 };
 function handleSelectChapter(data) {
@@ -175,6 +113,11 @@ function handleSelectChapter(data) {
 }
 
 function handleDownload(item) {
+  if (props.downloading) {
+    alert("Previous download isn't complete");
+    return;
+  }
+
   const chapterName = item.name;
   const chapters = chaptersList.value;
 
@@ -212,20 +155,6 @@ function backFromChapter() {
   selectedChapter.value = null;
 }
 
-const setOverflow = (val) => {
-  document.body.style.overflow = val;
-  document.querySelector("html").style.overflow = val;
-}
-watch(downloadStatus, (newVal, oldVal) => {
-  if (!oldVal.total && newVal.total) {
-    document.body.style.overflow = "hidden";
-    setOverflow("hidden");
-    return;
-  }
-
-  setOverflow("");
-});
-
 onMounted(() => {
   const mangaAlias = props.info.alias;
 
@@ -237,16 +166,10 @@ onMounted(() => {
     chaptersList.value = data.reverse();
   });
 });
-
-onUnmounted(() => {
-  document.body.style.overflowY = "";
-});
-
-const $emit = defineEmits(["back"]);
 </script>
 
 <template>
-  <div v-show="!selectedChapter">
+  <div ref="myElm" v-show="!selectedChapter">
     <MangaHeader :title="info.name" @back="$emit('back')" />
 
     <template v-if="chapters.length">
@@ -293,14 +216,6 @@ const $emit = defineEmits(["back"]);
       @back="backFromChapter"
     />
   </template>
-
-  <div v-if="downloadStatus.total" className="c-details__download">
-    <div>
-      {{ downloadStatus.current + " / " + downloadStatus.total }}
-      <span :style="downloadProgressStyle" />
-      <span :style="downloadImageProgressStyle" />
-    </div>
-  </div>
 </template>
 
 <style>
@@ -309,58 +224,5 @@ const $emit = defineEmits(["back"]);
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 14px;
-}
-
-.c-details__download {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  font-size: 24px;
-  line-height: 40px;
-}
-.c-details__download::before {
-  z-index: -1;
-  position: absolute;
-  left: 0;
-  top: 0;
-  width: 100%;
-  height: 100%;
-  background-color: #000000b3;
-  content: "";
-}
-
-.c-details__download div {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
-  padding: 8px 0;
-  border: 1px solid white;
-  width: 80%;
-  height: 40px;
-  display: block;
-  background-color: #4c4c4c;
-  text-align: center;
-}
-
-.c-details__download span {
-  z-index: -1;
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: #1a1a1a;
-  transform-origin: left center;
-  transition: easy-out 0.2s;
-  will-change: transform;
-}
-.c-details__download span:last-child {
-  top: auto;
-  bottom: 0;
-  height: 10%;
-  background-color: #fff;
 }
 </style>
