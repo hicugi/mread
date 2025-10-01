@@ -2,7 +2,7 @@ import 'package:http/http.dart' as http;
 import 'dart:io';
 import './general.dart';
 
-const String ADDRESS_URL = 'http://mread.webmaho.com/api/current';
+const String ADDRESS_URL = 'http://142.93.171.163/mread/';
 
 class MyHtml {
   static Future<File> getHostFile() async {
