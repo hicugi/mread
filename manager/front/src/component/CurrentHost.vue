@@ -7,12 +7,11 @@ import { getHost, setHost } from "../constant.js";
 const apiHost = import.meta.env.VITE_API_HOST;
 const apiKey = import.meta.env.VITE_API_KEY;
 
-const host = ref(getHost());
+const host = ref("loading");
 const emit = defineEmits(["change"]);
 
 const updateHost = (value) => {
-  setHost(value);
-  emit("change", host.value);
+  host.value = value;
 }
 
 function handleSubmit() {
@@ -22,7 +21,7 @@ function handleSubmit() {
   body.append('value', value);
   body.append('key', apiKey);
 
-  const url = `${apiHost}/`;
+  const url = `${apiHost}update/`;
   fetch(url, { method: 'POST', body }).then(r => r.text()).then((msg) => {
     if (msg === "OK") {
       updateHost(value);
@@ -35,14 +34,7 @@ function handleSubmit() {
 }
 
 onMounted(() => {
-  if (host.value) {
-    emit("change", host.value);
-    return;
-  }
-
-  const url = `${apiHost}/current/`
-  fetch(url).then(r => r.text()).then((data) => {
-    host.value = data;
+  fetch(apiHost).then(r => r.text()).then((data) => {
     updateHost(data);
   })
 });
