@@ -2,7 +2,7 @@
 import UiButton from "./Ui/Button.vue";
 import { api } from "../constant.js";
 
-const { host, items } = defineProps({ host: String, items: Array });
+const { items } = defineProps({ items: Array });
 const emit = defineEmits(["updateList"]);
 
 function getBgImage(item) {
