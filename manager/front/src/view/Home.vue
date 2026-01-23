@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from "vue";
+import { ref, onMounted } from "vue";
 
 import CurrentHost from "../component/CurrentHost.vue";
 import NewManga from "../component/NewManga.vue";
@@ -18,8 +18,11 @@ function fetchList() {
 
 function handleChange(newValue) {
   host.value = newValue;
-  fetchList();
 }
+
+onMounted(() => {
+  fetchList();
+});
 </script>
 
 <template>
@@ -29,8 +32,8 @@ function handleChange(newValue) {
     <CurrentHost @change="handleChange" />
     <NewManga @success="fetchList" />
 
-    <template v-if="host && list.length">
-      <MangaList :host="host" :items="list" @updateList="fetchList()" />
+    <template v-if="list.length">
+      <MangaList :items="list" @updateList="fetchList()" />
     </template>
   </div>
 </template>
