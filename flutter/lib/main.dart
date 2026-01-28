@@ -52,18 +52,17 @@ class MyWebView extends StatefulWidget {
 }
 
 class _ParentWidgetState extends State<MyWebView> {
-  Future htmlContent = Future.value();
+  Future content = Future.value();
 
   @override
   void initState() {
     super.initState();
-    htmlContent = MyHtml.getHtml(host);
   }
 
   @override
   Widget build(BuildContext context) {
     return FutureBuilder(
-        future: htmlContent,
+        future: content,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.done) {
             return ChildWidget(htmlContent: snapshot.data);
@@ -113,6 +112,17 @@ class _MyWebViewState extends State<ChildWidget> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(message.message)),
           );
+        },
+      )
+
+      // sync manga
+      ..addJavaScriptChannel(
+        'flUpdateHost',
+        onMessageReceived: (JavaScriptMessage data) async {
+          var host = data.message;
+          await MyHtml.setMiddlewareHost(host);
+          await syncTemplate();
+          _renderHtml(_controller);
         },
       )
 
