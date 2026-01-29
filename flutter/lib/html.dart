@@ -1,23 +1,23 @@
 import 'package:http/http.dart' as http;
 import 'dart:io';
+import 'dart:async';
 import './general.dart';
 
 const String ADDRESS_URL = 'http://127.0.0.1:8000/';
 String middlewareUrl = ADDRESS_URL;
+var isGetHtmlRunning = false;
 
 class MyHtml {
   static Future<File> getHostFile() async {
-    Directory main = await General.getLocaleDir();
-    return File("${main.path}/addr");
+    return General.getFile("addr");
   }
-  static Future<File> getMiddlewareHostFile() async {
-    Directory main = await General.getLocaleDir();
-    return File("${main.path}/middleware");
-  }
-
   static Future<String> getHost() async {
     File fileHost = await getHostFile();
     return fileHost.readAsStringSync();
+  }
+
+  static Future<File> getMiddlewareHostFile() async {
+    return General.getFile("middleware");
   }
 
   static Future<void> setMiddlewareHost(String host) async {
@@ -29,10 +29,12 @@ class MyHtml {
     middlewareUrl = host;
   }
   static Future<void> syncMiddlewareHost() async {
-    File file = await getMiddlewareHostFile();
-    String host = await file.readAsStringSync();
+    try {
+      File file = await getMiddlewareHostFile();
+      String host = await file.readAsStringSync();
 
-    middlewareUrl = host;
+      middlewareUrl = host;
+    } catch(err) {}
   }
 
   static Future<File> getHtmlFile() async {
@@ -42,17 +44,31 @@ class MyHtml {
 
   static Future<String> getHtml(String host) async {
     File fileHtml = await getHtmlFile();
+
+    if (isGetHtmlRunning) {
+      while (isGetHtmlRunning) {
+        await Future.delayed(const Duration(seconds: 1));
+      }
+
+      return fileHtml.readAsStringSync();
+    }
+
+    isGetHtmlRunning = true;
+
     await syncMiddlewareHost();
 
     if (fileHtml.existsSync()) {
       General.innerDebug("HTML template: Reading from cache");
-      return fileHtml.readAsStringSync();
+      isGetHtmlRunning = false;
+
+      return await fileHtml.readAsStringSync();
     }
 
     await syncHtmlTemplate();
 
-    File fileRes = await getHtmlFile();
-    return fileRes.readAsStringSync();
+    isGetHtmlRunning = false;
+
+    return fileHtml.readAsStringSync();
   }
 
   static Future<bool> downloadHtml(String url) async {
