@@ -29,6 +29,17 @@ class General {
     return main;
   }
 
+  static Future<File> getFile(String path) async {
+    Directory local = await getLocaleDir();
+    return File("${local.path}/$path");
+  }
+
+  static Future<String> readFile(String path) async {
+    Directory local = await getLocaleDir();
+    File file = await File("${local.path}/$path");
+    return file.readAsStringSync();
+  }
+
   static Iterable getDirSortedItems(dirItems) {
     Iterable result = dirItems.map((v) {
       String alias = v.path.split("/").last;

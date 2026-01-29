@@ -57,6 +57,9 @@ class _ParentWidgetState extends State<MyWebView> {
   @override
   void initState() {
     super.initState();
+
+    General.innerDebug("ParentWidgetState init");
+    content = MyHtml.getHtml(host);
   }
 
   @override
@@ -233,6 +236,8 @@ class _MyWebViewState extends State<ChildWidget> {
     // #enddocregion platform_features
 
     _controller = controller;
+
+    General.innerDebug("Rendering on controller");
     _renderHtml(_controller);
   }
 
