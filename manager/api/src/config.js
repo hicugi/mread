@@ -11,6 +11,15 @@ export const domain = {
   "coffeemanga.io": {
     chapters: ".wp-manga-chapter a[href]",
     images: ".reading-content .page-break > img",
+    scrollToBottom: true,
+  },
+  "coffeemanga.ink": {
+    chapters: ".wp-manga-chapter a[href]",
+    images: {
+      selector: ".reading-content .page-break > img",
+      lookByHttp: true,
+    },
+    scrollToBottom: true,
   },
   "greatestestatedeveloper.com": {
     chapters: ".su-expand-content .su-posts a",
