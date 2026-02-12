@@ -16,6 +16,19 @@ async function downloadAll() {
   }
 }
 
+async function handleSelect(index) {
+  if (confirm("Only one?")) {
+    return downloadChapter(props.items[index]);
+  }
+
+  for (let i=index; i >= 0; i--) {
+    const item = props.items[i];
+
+    if (item.isDownloaded) continue;
+    await downloadChapter(item);
+  }
+}
+
 async function downloadChapter(item) {
   const { name } = route.params;
   const { label } = item;
@@ -70,7 +83,7 @@ async function downloadChapter(item) {
   <ul class="c-chaptersList">
     <template v-for="(item, i) in items" :key="i">
       <li class="c-chaptersList-item" :class="{ 'c-chaptersList-item--downloaded': item.isDownloaded || downloadedMemo[item.label] }">
-        <UiButton type="button" @click="downloadChapter(item)">{{ item.label }}</UiButton>
+        <UiButton type="button" @click="handleSelect(i)">{{ item.label }}</UiButton>
         <a :href="item.remoteLink" target="_blank" rel="noopener"><UiButton type="button">E</UiButton></a>
       </li>
     </template>
