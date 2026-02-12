@@ -37,11 +37,9 @@ export const getImages = async (dir, link, update) => {
   let imagesList = [];
   const imagesResponse = {};
   let isFinished = false;
-  let isGotImagesFromBody = false;
 
   update("started");
 
-  const selector = (sel) => Array.from(document.querySelectorAll(sel), (a) => a.getAttribute("src"));
   const options = {
     onResponse: async (res) => {
       const url = formatImgLink(res.url());
@@ -58,7 +56,7 @@ export const getImages = async (dir, link, update) => {
       const filePath = path.resolve(dir, String(fileName));
       const content = await res.body()
         .catch((error) => {
-          console.warn(url + ": couldn't download through onResponse");
+          console.warn(url + ": couldn't download through onResponse err " + error?.message);
           return downloadFromUlr(url, filePath);
         })
         .catch((err) => {
@@ -91,17 +89,32 @@ export const getImages = async (dir, link, update) => {
     close: () => waitFor(() => isFinished),
   };
 
-  if (typeof images === "string") {
-    imagesList = await openPage(link, [selector, images], options);
-  } else {
+  imagesList = await (async () => {
+    const querySelector = images;
+
     if (images.nextPageClick) {
       Object.assign(options, images);
     }
 
-    imagesList = await openPage(link, [selector, images.selector], options);
-  }
+    const selector = (sel) => Array.from(document.querySelectorAll(sel?.selector ?? sel), (elm) => {
+      if (sel.lookByHttp) {
+        let s = elm.outerHTML;
+        s = s.substring(s.indexOf('http'));
 
-  imagesList = imagesList.map(formatImgLink);
+        let i = Infinity;
+        if (s.indexOf(" ") != -1) i = Math.min(i, s.indexOf(" "));
+        if (s.indexOf('"') != -1) i = Math.min(i, s.indexOf('"'));
+        if (s.indexOf("'") != -1) i = Math.min(i, s.indexOf("'"));
+
+        return s.substring(0, i);
+      }
+
+      return elm.getAttribute("src");
+    });
+
+    const res = await openPage(link, [selector, querySelector], options);
+    return res.map(formatImgLink);
+  })();
 
   if (imagesList.length === 0) {
     isFinished = true;
@@ -130,7 +143,7 @@ export const getImages = async (dir, link, update) => {
     }
   }, 2000);
 
-  // reload page after 25 sec
+  // reload page after 1 min
   const interval2 = setInterval(async () => {
     if (isFinished) {
       clearInterval(interval2);
@@ -143,7 +156,7 @@ export const getImages = async (dir, link, update) => {
     } catch {
       clearInterval(interval2);
     }
-  }, 25 * 1000);
+  }, 60 * 1000);
 
   await waitFor(() => {
     let count = 0;

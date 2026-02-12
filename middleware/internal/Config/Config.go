@@ -11,7 +11,7 @@ var SERVER_PORT = (func() string {
 		return os.Getenv("PORT")
 	}
 
-	return "8000"
+	return "8001"
 })();
 var SERVER_IP string = ""
 
