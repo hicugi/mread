@@ -3,38 +3,25 @@ import 'dart:io';
 import 'dart:async';
 import './general.dart';
 
-const String ADDRESS_URL = 'http://127.0.0.1:8000/';
-String middlewareUrl = ADDRESS_URL;
+String hostUrl = 'http://127.0.0.1:8000/';
 var isGetHtmlRunning = false;
 
 class MyHtml {
   static Future<File> getHostFile() async {
     return General.getFile("addr");
   }
+  static Future<void> setHostFile(String host) async {
+    General.innerDebug("[setHostFile] $host");
+
+    File file = await getHostFile();
+    file.writeAsString(host);
+
+    hostUrl = host;
+  }
+
   static Future<String> getHost() async {
     File fileHost = await getHostFile();
     return fileHost.readAsStringSync();
-  }
-
-  static Future<File> getMiddlewareHostFile() async {
-    return General.getFile("middleware");
-  }
-
-  static Future<void> setMiddlewareHost(String host) async {
-    General.innerDebug("[setMiddlewareHost] $host");
-
-    File file = await getMiddlewareHostFile();
-    file.writeAsString(host);
-
-    middlewareUrl = host;
-  }
-  static Future<void> syncMiddlewareHost() async {
-    try {
-      File file = await getMiddlewareHostFile();
-      String host = await file.readAsStringSync();
-
-      middlewareUrl = host;
-    } catch(err) {}
   }
 
   static Future<File> getHtmlFile() async {
@@ -55,8 +42,6 @@ class MyHtml {
 
     isGetHtmlRunning = true;
 
-    await syncMiddlewareHost();
-
     if (fileHtml.existsSync()) {
       General.innerDebug("HTML template: Reading from cache");
       isGetHtmlRunning = false;
@@ -74,7 +59,7 @@ class MyHtml {
   static Future<bool> downloadHtml(String url) async {
     File file = await getHostFile();
 
-    General.innerDebug("[downloadHtml] downloading html ${file.path} from $url");
+    General.innerDebug("[downloadHtml] downloading html from $url");
 
     try {
       final response = await http.get(Uri.parse(url));
@@ -134,22 +119,10 @@ class MyHtml {
   }
 
   static Future<void> syncHtmlTemplate() async {
-    General.innerDebug("[syncHtmlTemplate] getting template from $middlewareUrl");
+    General.innerDebug("[syncHtmlTemplate] getting template from $hostUrl");
 
     try {
-      await syncMiddlewareHost();
-      final response = await http.get(Uri.parse(middlewareUrl));
-
-      General.innerDebug("[syncHtmlTemplate] 1 recieved response");
-
-      String host = "http://${response.body}";
-
-      File hostFile = await getHostFile();
-      hostFile.writeAsString(host);
-
-      General.innerDebug("[syncHtmlTemplate] 2 Updating cache for HTML $host");
-
-      await downloadHtml(host);
+      await downloadHtml(hostUrl);
     } catch(error) {
       General.innerDebug("[syncHtmlTemplate] E Couldn't download from, settingup host form");
       await htmlForSettingHost();

@@ -123,7 +123,7 @@ class _MyWebViewState extends State<ChildWidget> {
         'flUpdateHost',
         onMessageReceived: (JavaScriptMessage data) async {
           var host = data.message;
-          await MyHtml.setMiddlewareHost(host);
+          await MyHtml.setHostFile(host);
           await syncTemplate();
           _renderHtml(_controller);
         },
