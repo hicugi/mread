@@ -1,20 +1,17 @@
 <script setup>
-import { ref, computed, defineProps, defineEmits, onMounted } from "vue";
+import { ref, computed, defineEmits, onMounted } from "vue";
 
-import Card from "./card.vue";
-import UiButton from "../ui/Button.vue"
-import { isApp, HOST_URL_KEY } from "../../helper/main";
-import { api } from "../../api";
+import Card from "../components/manga/card.vue";
+import UiButton from "../components/ui/Button.vue";
+import { isApp, HOST_URL_KEY } from "../helper/main.js";
+import { api } from "../api.js";
 
+const listOnDevice = ref([]);
 const items = ref([]);
-
-const props = defineProps({
-  listOnDevice: Array,
-});
 
 const filteredItems = computed(() => {
   const skip = {};
-  for (const item of props.listOnDevice) {
+  for (const item of listOnDevice.value) {
     skip[item.name] = true;
   }
 
@@ -35,6 +32,10 @@ function clearAll() {
   }
 }
 
+window.flSyncMangaList = (data) => {
+  listOnDevice.value = data;
+};
+
 onMounted(async () => {
   if (isApp) {
     flFetchMangaList.postMessage("");
@@ -49,13 +50,14 @@ onMounted(async () => {
     });
   }
 
-  api.get("/list")
+  api
+    .get("/list")
     .then((data) => {
       items.value = data;
     })
     .catch((err) => {
       console.error(err);
-    });;
+    });
 });
 
 const emit = defineEmits(["select", "continue"]);
@@ -73,8 +75,6 @@ const emit = defineEmits(["select", "continue"]);
           v-for="(item, index) of listOnDevice"
           :key="`device${item.alias}`"
           v-bind="item"
-          @select="() => emit('select', item)"
-          @continue="(chapterName) => emit('continue', item.name, chapterName)"
         />
       </div>
 
@@ -86,7 +86,6 @@ const emit = defineEmits(["select", "continue"]);
         v-for="(item, index) of filteredItems"
         :key="`online${item.alias}`"
         v-bind="item"
-        @select="() => emit('select', item)"
       />
     </div>
 

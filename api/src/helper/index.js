@@ -2,6 +2,7 @@ import path from "path";
 import fs from "fs/promises";
 
 import { MANGA_DIR } from "../config.js";
+import { decode } from "./metaConverter.js";
 
 export const PORT = 8000;
 export const HOST = `http://0.0.0.0:${PORT}`;
@@ -33,3 +34,14 @@ export const getMangaChapters = async (name) => {
 
   return result;
 };
+
+export async function getMangaInfo(alias) {
+  const content = await fs.readFile(path.resolve(MANGA_DIR, alias, ".meta"), "utf-8");
+  const { name } = decode(content);
+
+  return {
+    name,
+    alias,
+    image: `manga/${alias}/cover.jpg`,
+  };
+}

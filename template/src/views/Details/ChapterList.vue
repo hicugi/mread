@@ -1,10 +1,17 @@
 <script setup>
-import { defineProps, defineEmits } from "vue";
+import { defineProps, computed, defineEmits } from "vue";
+import { useRoute, useRouter } from "vue-router";
+
 import { isApp } from "../../helper/main";
+
+const route = useRoute()
+const router = useRouter();
 
 const props = defineProps({
   items: Array,
 });
+
+const alias = computed(() => route.params.alias);
 
 const emit = defineEmits(["select", "download"]);
 </script>
@@ -16,13 +23,12 @@ const emit = defineEmits(["select", "download"]);
       :key="`${index}_${item.isDownloaded}`"
       :class="{ 'c-chapterList__item--continue': item.isContinue }"
     >
-      <button
+      <RouterLink
         class="c-chapterList__name"
-        type="button"
-        @click="emit('select', item)"
+        :to="{name: 'chapter', params: { alias, chapter: item.name }}"
       >
         {{ item.name }}
-      </button>
+      </RouterLink>
       <button
         v-if="isApp && !item.isDownloaded"
         class="c-chapterList__download"
@@ -49,16 +55,19 @@ const emit = defineEmits(["select", "download"]);
   align-items: stretch;
   background-color: #fff;
 }
-.c-chapterList button {
-  line-height: 48px;
+.c-chapterList a {
 }
 .c-chapterList__item--continue button {
   background-color: rgba(0, 255, 0, 0.3);
 }
 .c-chapterList__name {
+  border: 1px solid #151515;
   padding: 0 15px;
   flex-grow: 1;
+  color: #151515;
+  line-height: 48px;
   text-align: left;
+  text-decoration: none;
 }
 .c-chapterList__download {
   width: 80px;
