@@ -2,7 +2,7 @@ import path from "path";
 import fs from "fs";
 
 import { MANGA_DIR } from "../config.js";
-import { getMangaChapters } from "../helper/index.js";
+import { getMangaChapters, getMangaInfo } from "../helper/index.js";
 
 export const getChapters = async (req, res) => {
   const { name } = req.params;
@@ -53,5 +53,10 @@ export const getChapters = async (req, res) => {
   };
   result.sort((a, b) => format(a.name) - format(b.name));
 
-  res.send(result);
+  const info = await getMangaInfo(name);
+
+  res.send({
+    ...info,
+    chapters: result
+  });
 };

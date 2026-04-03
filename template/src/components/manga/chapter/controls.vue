@@ -1,5 +1,9 @@
 <script setup>
 import { computed, defineProps, defineEmits } from "vue";
+import { useRoute, useRouter } from 'vue-router'
+
+const route = useRoute()
+const router = useRouter();
 
 const props = defineProps({
   value: String,
@@ -36,7 +40,12 @@ function handleNextClick() {
 const emit = defineEmits(["select"]);
 
 function selectChapter(index) {
-  emit("select", props.items[index]);
+  const { alias } = route.params;
+
+  router.push({ name: "chapter", params: {
+    alias,
+    chapter: props.items[index].name,
+  }});
 }
 </script>
 

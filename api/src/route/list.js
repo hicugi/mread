@@ -2,7 +2,7 @@ import path from "path";
 import fs from "fs/promises";
 
 import { MANGA_DIR } from "../config.js";
-import { getMangaChapters } from "../helper/index.js";
+import { getMangaChapters, getMangaInfo } from "../helper/index.js";
 import { decode } from "../helper/metaConverter.js";
 
 export const getList = async (_, res) => {
@@ -12,14 +12,8 @@ export const getList = async (_, res) => {
   for (const item of list) {
     if (item[0] == ".") continue;
 
-    const content = await fs.readFile(path.resolve(MANGA_DIR, item, ".meta"), "utf-8");
-    const { name } = decode(content);
-
-    result.push({
-      name,
-      alias: item,
-      image: `manga/${item}/cover.jpg`,
-    });
+    const info = await getMangaInfo(item);
+    result.push(info);
   }
 
   for (const item of result) {

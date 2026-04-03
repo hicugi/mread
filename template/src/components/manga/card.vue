@@ -1,14 +1,9 @@
 <script setup>
 import { computed, inject } from "vue";
+import { getImgUrl } from "../../helper/main.js";
 
-const { name, image, currentChapter, lastChapter } = defineProps({
-  name: String,
-  image: String,
-  currentChapter: String,
-  lastChapter: String,
-});
+const { alias, name, image, currentChapter, lastChapter } = defineProps(["alias", "name", "image", "currentChapter", "lastChapter"]);
 
-const getImgUrl = inject("getImgUrl");
 const style = computed(() => ({
   backgroundImage: `url('${getImgUrl(image)}')`,
 }));
@@ -27,15 +22,17 @@ const openLastChapter = () => {
   <div class="c-card" :style="style">
     <div class="c-card-chapters">
       <template v-if="lastChapter">
-        <button v-if="currentChapter" @click="openLastChapter">
+        <RouterLink :to="{name: 'details', params: { alias }}">
           {{ currentChapter }}
-        </button>
+        </RouterLink>
         <span>{{ lastChapter }}</span>
       </template>
     </div>
 
     <h3>{{ name }}</h3>
-    <button class="c-card__select" @click="handleSelect">open chapters</button>
+    <RouterLink class="c-card__select" :to="{name: 'details', params: { alias }}">
+      open chapters
+    </RouterLink>
   </div>
 </template>
 
@@ -76,7 +73,7 @@ const openLastChapter = () => {
   padding: 3px 7px;
   display: block;
 }
-.c-card-chapters button::before {
+.c-card-chapters a::before {
   z-index: 1;
   position: absolute;
   left: 0;

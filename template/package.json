@@ -3,13 +3,18 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "engines": {
+    "node": ">=22.22.1",
+    "npm": ">=10.9.4"
+  },
   "scripts": {
     "start": "vite",
     "build": "vite build && node build-script.js && cp dist/template.html ../api/public/index.html",
     "preview": "vite preview"
   },
   "dependencies": {
-    "vue": "^3.5.0"
+    "vue": "^3.5.0",
+    "vue-router": "^5.0.4"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^5.0.4",
