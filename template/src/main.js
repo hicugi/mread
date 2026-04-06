@@ -1,5 +1,11 @@
 import { createApp } from "vue";
-import { createWebHistory, createRouter } from "vue-router";
+import {
+  createRouter,
+  createMemoryHistory,
+  createWebHistory,
+} from "vue-router";
+
+import { isApp } from "./helper/main.js";
 
 import "./style.css";
 
@@ -9,7 +15,7 @@ import Details from "./views/Details/Details.vue";
 import Chapter from "./views/Chapter.vue";
 
 export const router = createRouter({
-  history: createWebHistory(),
+  history: isApp ? createMemoryHistory() : createWebHistory(),
   routes: [
     { path: "/", name: "home", component: Home },
     { path: "/manga/:alias", name: "details", component: Details },
