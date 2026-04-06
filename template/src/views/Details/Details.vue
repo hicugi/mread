@@ -21,7 +21,7 @@ const myElm = useTemplateRef("myElm");
 
 const chaptersList = ref([]);
 const chaptersOnDevice = ref([]);
-const selectedChapter = ref(null);
+const lastReadChapter = ref(null);
 const images = ref([]);
 
 const alias = computed(() => route.params.alias);
@@ -29,9 +29,6 @@ const info = computed(() => store.getState().mangaInfo);
 
 const chapters = computed(() => store.getState().chapters ?? []);
 const firstChapter = computed(() => chapters.value.at(-1)?.name);
-const lastReadChapter = computed(
-  () => chapters.value.find((item) => item.isContinue)?.name,
-);
 
 const headerChapter = computed(() => {
   const last = lastReadChapter.value;
@@ -56,6 +53,21 @@ function handleRemoveManga() {
   }
 }
 
+window.appSyncMangaInfo = (obj) => {
+  const { currentChapter } = obj;
+
+  if (currentChapter) {
+    lastReadChapter.value = currentChapter;
+  }
+
+  store.setState((prev) => ({
+    ...prev,
+    mangaInfo: {
+      ...prev.mangaInfo,
+      ...obj,
+    },
+  }));
+};
 window.flSyncChapters = (data) => {
   chaptersOnDevice.value = data.reverse();
 };
@@ -182,7 +194,7 @@ onMounted(() => {
       </div>
     </header>
 
-    <DetailsChapters class="container" />
+    <DetailsChapters class="container" :lastReadChapter="lastReadChapter" />
   </div>
 </template>
 

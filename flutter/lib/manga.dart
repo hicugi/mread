@@ -34,7 +34,7 @@ class Manga {
     Directory mangaDir = await Directory("${listDir.path}/$alias");
 
     if (!mangaDir.existsSync()) {
-      return;
+      mangaDir.createSync(recursive: true);
     }
 
     File saveFile = File("${mangaDir.path}/$MANGA_SAVE");
@@ -106,9 +106,6 @@ class Manga {
   static runScriptForInsertingImgs(String name, String chapter, callback) async {
     Directory mangaDir = await Manga.getMangaDir();
     Directory chapterDir = Directory("${mangaDir.path}/$name/$chapter");
-
-    // create save file
-    saveLastReadedChapter(name, chapter);
 
     Iterable items = General.getDirSortedItems(chapterDir
         .listSync()

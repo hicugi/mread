@@ -1,5 +1,5 @@
 <script setup>
-import { inject, ref, computed, defineEmits } from "vue";
+import { inject, ref, computed, defineProps, defineEmits } from "vue";
 import { useRoute, useRouter } from "vue-router";
 
 import { isApp } from "../../helper/main";
@@ -12,14 +12,13 @@ const route = useRoute();
 const router = useRouter();
 const store = inject("store");
 
+const { lastReadChapter } = defineProps(["lastReadChapter"]);
+
 const showAll = ref(false);
 
 const alias = computed(() => route.params.alias);
 
-const chapters = computed(() => store.getState().chapters ?? [])
-const lastReadChapter = computed(
-  () => chapters.value.find((item) => item.isContinue)?.name,
-);
+const chapters = computed(() => store.getState().chapters ?? []);
 const filteredChapters = computed(() => {
   const res = [...(store.getState().chapters ?? [])];
 
@@ -27,8 +26,8 @@ const filteredChapters = computed(() => {
     return res;
   }
 
-  if (lastReadChapter.value !== undefined) {
-    let idx = res.findIndex((item) => item.name === lastReadChapter.value);
+  if (lastReadChapter) {
+    let idx = res.findIndex((item) => item.name === lastReadChapter);
     res.splice(idx + 2);
     res.splice(0, Math.max(0, res.length - LIMIT));
     return res;
@@ -51,16 +50,21 @@ function handleShowMore() {
     </header>
 
     <div v-if="alias" class="p-detailsChapters__body">
-      <template v-for="(item, index) of filteredChapters" :key="`${item.name}_${item.isDownloaded}`">
+      <template
+        v-for="(item, index) of filteredChapters"
+        :key="`${item.name}_${item.isDownloaded}`"
+      >
         <RouterLink
           :class="{
             'p-detailsChapters-item': true,
-            'p-detailsChapters-item--continue': item.isContinue,
+            'p-detailsChapters-item--continue': item.name == lastReadChapter,
             'p-detailsChapters-item--downloaded': item.isDownloaded,
           }"
           :to="{ name: 'chapter', params: { alias, chapter: item.name } }"
         >
           <span class="p-detailsChapters-item__name">Ch. {{ item.name }}</span>
+          <span v-if="item.name == lastReadChapter" class="p-detailsChapters-item__hint">CURRENT</span>
+
           <span v-if="isApp" class="p-detailsChapters-item__control">
             <img :src="iconDownload" width="16px" />
           </span>
@@ -68,8 +72,13 @@ function handleShowMore() {
       </template>
     </div>
 
-    <footer v-if="chapters.length > filteredChapters.length && !showAll" class="p-detailsChapters-more">
-      <button class="p-detailsChapters-more__btn" @click="handleShowMore"><span>VIEW MORE CHAPTERS</span></button>
+    <footer
+      v-if="chapters.length > filteredChapters.length && !showAll"
+      class="p-detailsChapters-more"
+    >
+      <button class="p-detailsChapters-more__btn" @click="handleShowMore">
+        <span>VIEW MORE CHAPTERS</span>
+      </button>
     </footer>
   </section>
 </template>
@@ -83,7 +92,7 @@ function handleShowMore() {
 }
 .p-detailsChapters__header p {
   margin: 0;
-  color: #ADAAAA;
+  color: #adaaaa;
   font-size: 15px;
   line-height: 1em;
 }
@@ -100,21 +109,27 @@ function handleShowMore() {
   position: relative;
   padding: var(--side-gap) var(--control-size) var(--side-gap) var(--side-gap);
   background-color: #101010;
-  color: #ADAAAA;
+  color: #adaaaa;
   text-decoration: none;
 }
-.p-detailsChapters-item--downloaded {
+.p-detailsChapters-item--continue {
   background-color: #131313;
-}
-.p-detailsChapters-item--continue button {
-  background-color: rgba(0, 255, 0, 0.3);
+  color: #ffffff;
 }
 
 .p-detailsChapters-item__name {
+  display: block;
   font-size: 16px;
   font-weight: bold;
   line-height: 24px;
   text-decoration: none;
+}
+.p-detailsChapters-item__hint {
+  display: block;
+  color: #9BA8FF;
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1.5;
 }
 
 .p-detailsChapters-item__control {
@@ -130,7 +145,7 @@ function handleShowMore() {
 
 .p-detailsChapters-more {
   margin-top: 16px;
-  color: #ADAAAA;
+  color: #adaaaa;
 }
 .p-detailsChapters-more__btn {
   position: relative;
@@ -156,6 +171,6 @@ function handleShowMore() {
   width: var(--size);
   height: var(--size);
   display: inline-block;
-  content: '';
+  content: "";
 }
 </style>
