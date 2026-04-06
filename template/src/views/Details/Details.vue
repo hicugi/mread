@@ -1,59 +1,53 @@
 <script setup>
-import { ref, computed, defineProps, inject, useTemplateRef, onMounted } from "vue";
-import { useRoute, useRouter } from 'vue-router'
+import { ref, computed, inject, useTemplateRef, onMounted } from "vue";
+import { useRoute, useRouter } from "vue-router";
 
 import MangaHeader from "../../components/manga/header.vue";
-import ChapterList from "./ChapterList.vue";
+import DetailsChapters from "./Chapters.vue";
 import ChapterControls from "../../components/manga/chapter/controls.vue";
 import UiButton from "../../components/ui/Button.vue";
 
-const route = useRoute()
+import { api } from "../../api";
+import { fetchImages, isApp, getImgUrl } from "../../helper/main.js";
+
+import iconBack from "../iconBack.svg";
+import iconDownload from "./iconDownload.svg";
+
+const route = useRoute();
 const router = useRouter();
 const store = inject("store");
 
-import { api } from "../../api";
-import { fetchImages, isApp } from "../../helper/main.js";
-
 const myElm = useTemplateRef("myElm");
 
-const info = ref({});
 const chaptersList = ref([]);
 const chaptersOnDevice = ref([]);
 const selectedChapter = ref(null);
 const images = ref([]);
 
-const chaptersList1 = computed(() => chaptersOnDevice.value);
-const chaptersList2 = computed(() => {
-  const skip = {};
-  for (const item of chaptersOnDevice.value) {
-    skip[item.name] = true;
+const alias = computed(() => route.params.alias);
+const info = computed(() => store.getState().mangaInfo);
+
+const chapters = computed(() => store.getState().chapters ?? []);
+const firstChapter = computed(() => chapters.value.at(-1)?.name);
+const lastReadChapter = computed(
+  () => chapters.value.find((item) => item.isContinue)?.name,
+);
+
+const headerChapter = computed(() => {
+  const last = lastReadChapter.value;
+  const first = firstChapter.value;
+
+  if (last) {
+    return {
+      label: "Continue Ch. " + last,
+      value: last,
+    };
   }
 
-  return chaptersList.value.filter((item) => skip[item.name] === undefined);
-});
-
-const getAllChapters = (local, online) => {
-  if (!local.length) return online;
-  if (!online.length) return local;
-
-  const localKeys = {};
-  for (const item of local) {
-    localKeys[item.name] = true;
-  }
-
-  const filteredItems = online.filter(
-    (item) => localKeys[item.name] === undefined
-  );
-  return [...local, ...filteredItems];
-}
-const allChapters = computed(() => {
-  const localItems = chaptersOnDevice.value;
-  const onlineItems = chaptersList.value;
-
-  return getAllChapters(localItems, onlineItems);
-});
-const lastReadChapter = computed(() => {
-  return allChapters.value.find((item) => item.isContinue);
+  return {
+    label: "Start Reading Ch. " + first,
+    value: first,
+  };
 });
 
 function handleRemoveManga() {
@@ -66,35 +60,7 @@ window.flSyncChapters = (data) => {
   chaptersOnDevice.value = data.reverse();
 };
 
-async function download(list) {
-  const { alias, name, image, } = info;
-
-  sotre.setState((prev) => ({
-    ...prev,
-    download: {
-      name,
-      alias,
-      image,
-      chapters: list,
-
-      callback: async () => {
-        if (!myElm) return;
-
-        flFetchMangaList.postMessage("");
-        await new Promise((ok) => setTimeout(ok, 300));
-
-        flSelectManga.postMessage(mangaAlias);
-      }
-    }
-  }));
-}
-
 function handleDownload(item) {
-  if (props.downloading) {
-    alert("Previous download isn't complete");
-    return;
-  }
-
   const chapterName = item.name;
   const chapters = chaptersList.value;
 
@@ -132,6 +98,33 @@ function handleBackClick() {
   router.push({ name: "home" });
 }
 
+const combineChapters = (local, online) => {
+  if (!local.length) return online;
+  if (!online.length) return local;
+
+  const localKeys = {};
+  for (const item of local) {
+    localKeys[item.name] = item;
+  }
+
+  const res = [...online];
+
+  for (let i = 0; i < res.length; i++) {
+    const item = res[i];
+
+    if (localKeys[item.name] !== undefined) {
+      const loc = localKeys[item.name];
+      res[i] = {
+        ...res[i],
+        ...loc,
+        isDownloaded: true,
+      };
+    }
+  }
+
+  return res;
+};
+
 onMounted(() => {
   const { alias } = route.params;
 
@@ -141,49 +134,108 @@ onMounted(() => {
 
   api.get(`/chapters/${alias}`).then((data) => {
     const { chapters, ...dataInfo } = data;
-    info.value = dataInfo;
     chaptersList.value = chapters.reverse();
 
     store.setState((prev) => ({
       ...prev,
       mangaInfo: dataInfo,
-      chapters: getAllChapters(chaptersOnDevice, chapters),
+      chapters: combineChapters(chaptersOnDevice, chapters),
     }));
   });
 });
 </script>
 
 <template>
-  <div ref="myElm" />
-
-  <MangaHeader :title="info.name" @back="handleBackClick" />
-
-  <template v-if="chaptersOnDevice.length">
-    <h2>On device:</h2>
-
-    <div class="c-details__controls">
-      <RouterLink v-if="alias && lastReadChapter" :tp="['chapter', { alias, chapter: lastReadChapter }]">Continue {{ lastReadChapter.name }}</RouterLink>
-      <UiButton v-if="isApp" @click="handleRemoveManga">D</UiButton>
+  <div class="p-details" ref="myElm">
+    <div v-if="alias" class="container">
+      <UiButton
+        class="p-details__back-btn"
+        :link="{ name: 'home' }"
+        size="large"
+      >
+        <img :src="iconBack" width="18px" />
+      </UiButton>
     </div>
 
-    <ChapterList
-      key="chaptersOnDevice"
-      :items="chaptersList1"
-      @download="handleDownload"
-    />
+    <header
+      v-if="info"
+      class="p-details-header"
+      :style="{ backgroundImage: `url('${getImgUrl(info.image)}')` }"
+    >
+      <div class="container">
+        <h1>{{ info.name }}</h1>
 
-    <h2 v-if="chaptersList2.length">Online:</h2>
-  </template>
+        <div v-if="headerChapter" class="p-details-header__controls">
+          <UiButton
+            :link="{
+              name: 'chapter',
+              params: { alias, chapter: headerChapter.value },
+            }"
+            variant="primary"
+            size="large"
+            v-text="headerChapter.label"
+          />
+          <UiButton v-if="isApp" size="large">
+            <img :src="iconDownload" width="18px" />
+          </UiButton>
+        </div>
+      </div>
+    </header>
 
-  <ChapterList
-    key="listOnline"
-    :items="chaptersList2"
-    @download="handleDownload"
-  />
+    <DetailsChapters class="container" />
+  </div>
 </template>
 
 <style>
-.c-details__controls {
+.p-details .container {
+  position: relative;
+}
+.p-details__back-btn {
+  z-index: 1;
+  position: absolute;
+  top: 24px;
+  left: 24px;
+}
+
+.p-details-header {
+  z-index: 0;
+  position: relative;
+  margin-bottom: 48px;
+  height: 574px;
+  background: no-repeat top;
+  background-size: 100% auto;
+  display: grid;
+  align-items: flex-end;
+}
+.p-details-header::before {
+  z-index: -1;
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    to bottom,
+    #0e0e0e99,
+    #0e0e0ecd 60%,
+    #0e0e0e 100%
+  );
+  content: "";
+}
+
+.p-details-header__controls {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 12px;
+}
+
+.p-details-header h1 {
+  margin: 0 0 40px;
+  font-size: 48px;
+  line-height: 1.2;
+}
+
+.p-details__controls {
   margin-bottom: 20px;
   display: grid;
   grid-template-columns: 1fr 1fr;

@@ -11,7 +11,17 @@ provide("store", {
   setState: (fn) => store.value = fn(store.value),
 });
 
-window[HOST_URL_KEY] = "http://127.0.0.1:8000";
+
+window[HOST_URL_KEY] = (() => {
+  const DEV_PORT = 5173;
+  const SERVER_PORT = 8000;
+
+  if (location.host.includes(DEV_PORT)) {
+    return location.origin.replace(DEV_PORT, SERVER_PORT);
+  }
+
+  return "http://127.0.0.1:8000";
+})();
 window.flSetHost = (value) => {
   window[HOST_URL_KEY] = value;
   host.value = value;
