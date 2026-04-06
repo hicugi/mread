@@ -134,7 +134,7 @@ class _MyWebViewState extends State<ChildWidget> {
         'flFetchMangaList',
         onMessageReceived: (JavaScriptMessage data) async {
           String currentHost = await MyHtml.getHost();
-          General.innerDebug("Setting host in webview: $currentHost");
+          General.innerDebug("JS.flFetchMangaList Setting host in webview: $currentHost");
           _controller.runJavaScript("flSetHost('$currentHost');");
           await _insertMangaList();
         },
@@ -149,10 +149,15 @@ class _MyWebViewState extends State<ChildWidget> {
       // select manga
       ..addJavaScriptChannel('flSelectManga',
           onMessageReceived: (JavaScriptMessage data) {
-        _syncChapters(data.message);
+        _syncMangaInfo(data.message);
       })
 
       // read chapter
+      ..addJavaScriptChannel('flSynchChapterSave',
+          onMessageReceived: (JavaScriptMessage data) async {
+        var [name, chapter] = data.message.split('|');
+        Manga.saveLastReadedChapter(name, chapter);
+      })
       ..addJavaScriptChannel('flInsertImgsFromChapter',
           onMessageReceived: (JavaScriptMessage data) async {
         var [name, chapter] = data.message.split('|');
@@ -258,6 +263,21 @@ class _MyWebViewState extends State<ChildWidget> {
     await Manga.runScriptForMangaList(_controller.runJavaScript);
   }
 
+  void _jsRun(String fn, String attrs) {
+    String value = "$fn($attrs)";
+
+    General.innerDebug("_jsRun: $value");
+    _controller.runJavaScript(value);
+  }
+
+  Future<void> _syncMangaInfo(String alias) async {
+    String currentChapter = await Manga.getLastReadedChapter(alias);
+    if (currentChapter != "") {
+      _jsRun("appSyncMangaInfo", "{ currentChapter: '$currentChapter' }");
+    }
+
+    _syncChapters(alias);
+  }
   Future<void> _syncChapters(String name) async {
     flSelectMangaLastId = (flSelectMangaLastId + 1) % 255;
     num currentId = flSelectMangaLastId;
@@ -269,18 +289,9 @@ class _MyWebViewState extends State<ChildWidget> {
     Directory mangaDir = await Manga.getMangaDir();
     Directory selMangaDir = Directory("${mangaDir.path}/$name");
 
-    if (!selMangaDir.existsSync()) {
-      return;
-    }
+    if (!selMangaDir.existsSync()) return;
 
-    File saveFile = File("${mangaDir.path}/$name/$MANGA_SAVE");
-    String lastReadedChapter = "";
-
-    if (saveFile.existsSync()) {
-      lastReadedChapter = saveFile.readAsStringSync();
-    }
-
-    General.innerDebug("Selected manga: $name");
+    General.innerDebug("_syncChapters: Selected manga: $name");
 
     Iterable chapters = General.getDirSortedItems(selMangaDir.listSync().whereType<Directory>());
 
@@ -292,11 +303,7 @@ class _MyWebViewState extends State<ChildWidget> {
       String chapterName = chapter['alias'];
       var chapterInfo = await Manga.getChapterDetails(name, chapterName);
 
-      String continueValue =
-          lastReadedChapter == chapterName ? 'true' : 'false';
-
-      jsData.add(
-          "{ name: '$chapterName', itemsCount: ${chapterInfo['count']}, isDownloaded: true, isContinue: $continueValue }");
+      jsData.add("{ name: '$chapterName', itemsCount: ${chapterInfo['count']}, isDownloaded: true }");
     }
 
     _controller.runJavaScript("flSyncChapters([${jsData.join(',')}]);");

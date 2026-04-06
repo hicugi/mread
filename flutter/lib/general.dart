@@ -17,6 +17,10 @@ class General {
   static Future<String> getImageBase64(String path) async {
     File imageFile = File(path);
 
+    if (!imageFile.existsSync()) {
+      return "";
+    }
+
     Uint8List imageBytes = await imageFile.readAsBytes();
     String imageBase64 = base64Encode(imageBytes);
 

@@ -24,7 +24,6 @@ window[HOST_URL_KEY] = (() => {
 })();
 window.flSetHost = (value) => {
   window[HOST_URL_KEY] = value;
-  host.value = value;
 }
 
 function handleDownloadSuccess() {

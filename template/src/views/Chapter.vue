@@ -15,7 +15,8 @@ const myElm = useTemplateRef("myElm");
 
 const images = ref([]);
 
-const name = computed(() => store.getState().mangaInfo?.name ?? "");
+const info = computed(() => store.getState().mangaInfo);
+const name = computed(() => info?.name ?? "");
 const alias = computed(() => route.params.alias);
 const chapter = computed(() => route.params.chapter ?? "");
 const chapters = computed(() => store.getState().chapters ?? []);
@@ -43,12 +44,19 @@ const loadImages = () => {
     }
   }
 
-  if (isDownloaded) {
-    setTimeout(() => {
+  setTimeout(() => {
+    if (info.value.currentChapter === undefined && typeof flSynchChapterSave !== "undefined") {
+      const value = [alias, info.value.name, getImgUrl(info.value.image)].join("|");
+      flSyncManga.postMessage(value);
+    }
+    if (typeof flSynchChapterSave !== "undefined") {
+      flSynchChapterSave.postMessage([alias, chapter].join("|"));
+    }
+
+    if (isDownloaded) {
       flInsertImgsFromChapter.postMessage([alias, chapter].join("|"));
-    }, 100);
-    return;
-  }
+    }
+  }, 100);
 
   fetchImages(alias, chapter).then((data) => {
     images.value = data;
