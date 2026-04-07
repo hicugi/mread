@@ -64,7 +64,7 @@ const emit = defineEmits(["select", "continue"]);
 </script>
 
 <template>
-  <section>
+  <section class="container">
     <h1>Manga list</h1>
 
     <div class="c-mangaList-saved" v-if="listOnDevice.length">
@@ -98,9 +98,6 @@ const emit = defineEmits(["select", "continue"]);
 
 <style>
 .c-mangaList-items {
-  margin: 0 auto;
-  max-width: 1200px;
-  padding: 0 15px;
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 30px;
@@ -108,18 +105,6 @@ const emit = defineEmits(["select", "continue"]);
 
 .c-mangaList-saved .c-mangaList-items {
   margin-bottom: 40px;
-}
-
-@media screen and (min-width: 768px) {
-  .c-mangaList-items {
-    grid-template-columns: repeat(3, 1fr);
-  }
-}
-
-@media screen and (min-width: 1024px) {
-  .c-mangaList-items {
-    grid-template-columns: repeat(4, 1fr);
-  }
 }
 
 .c-mangaList__cache-btm {

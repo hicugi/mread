@@ -5,9 +5,9 @@ import {
   createWebHistory,
 } from "vue-router";
 
-import { isApp } from "./helper/main.js";
-
 import "./style.css";
+
+import { isApp } from "./helper/main.js";
 
 import App from "./App.vue";
 import Home from "./views/Home.vue";

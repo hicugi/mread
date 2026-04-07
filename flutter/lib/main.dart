@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:webview_flutter/webview_flutter.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 // For downloading files
 import 'package:path_provider/path_provider.dart';
@@ -17,12 +18,34 @@ import './general.dart';
 import './html.dart';
 import './manga.dart';
 
+final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
+final StreamController<NotificationResponse> selectNotificationStream =
+    StreamController<NotificationResponse>.broadcast();
+
+@pragma('vm:entry-point')
+void notificationTapBackground(NotificationResponse notificationResponse) {
+  // ignore: avoid_print
+  print(
+    'notification(${notificationResponse.id}) action tapped: '
+    '${notificationResponse.actionId} with'
+    ' payload: ${notificationResponse.payload}',
+  );
+  if (notificationResponse.input?.isNotEmpty ?? false) {
+    // ignore: avoid_print
+    print(
+      'notification action tapped with input: ${notificationResponse.input}',
+    );
+  }
+}
+
 String host = '';
+int notificationId = 0;
 
 const chaptersSyncTimeout = Duration(milliseconds: 300);
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
   const app = MyApp();
   runApp(app);
 }
@@ -89,6 +112,8 @@ class ChildWidget extends StatefulWidget {
 
 class _MyWebViewState extends State<ChildWidget> {
   late final WebViewController _controller;
+  bool _isNotificationsWorking = false;
+
   String htmlContent = "";
   num flSelectMangaLastId = 0;
 
@@ -120,9 +145,19 @@ class _MyWebViewState extends State<ChildWidget> {
 
       // sync manga
       ..addJavaScriptChannel(
+        'flIsApp',
+        onMessageReceived: (JavaScriptMessage data) {},
+      )
+
+      // sync manga
+      ..addJavaScriptChannel(
         'flUpdateHost',
         onMessageReceived: (JavaScriptMessage data) async {
-          var host = data.message;
+          String host = data.message;
+          if (host[host.length - 1] == "/") {
+            host = host.substring(0, host.length - 1);
+          }
+
           await MyHtml.setHostFile(host);
           await syncTemplate();
           _renderHtml(_controller);
@@ -135,7 +170,7 @@ class _MyWebViewState extends State<ChildWidget> {
         onMessageReceived: (JavaScriptMessage data) async {
           String currentHost = await MyHtml.getHost();
           General.innerDebug("JS.flFetchMangaList Setting host in webview: $currentHost");
-          _controller.runJavaScript("flSetHost('$currentHost');");
+          _controller.runJavaScript("appSetHost('$currentHost');");
           await _insertMangaList();
         },
       )
@@ -149,7 +184,7 @@ class _MyWebViewState extends State<ChildWidget> {
       // select manga
       ..addJavaScriptChannel('flSelectManga',
           onMessageReceived: (JavaScriptMessage data) {
-        _syncMangaInfo(data.message);
+        Manga.syncMangaInfo(data.message, _jsRun);
       })
 
       // read chapter
@@ -164,28 +199,98 @@ class _MyWebViewState extends State<ChildWidget> {
         Manga.runScriptForInsertingImgs(name, chapter, _controller.runJavaScript);
       })
 
-      // download chapter
       ..addJavaScriptChannel(
-        'flDownloadImage',
+        'flDownloadChapters',
         onMessageReceived: (JavaScriptMessage data) async {
-          var [url, name, chapter, fileName, imagesCount] =
-              data.message.split("|");
+          if (!_isNotificationsWorking) {
+            _requestNotificationPolicyAccess();
+            return;
+          }
+
+          var payload = data.message.split(";");
+          var [alias, name, image, preUrl] = payload[0].split("|");
+
+          await Manga.downloadMangaInfo(alias, name, preUrl + image);
+
+          var chapters = payload.sublist(1);
+          var chaptersLen = chapters.length;
+
+          String title = "$name";
+          String description = "Downloading $chaptersLen chapters";
+          int downloadedCount = 0;
+
+          _sendProgressNotification(title, description, chaptersLen, () {
+            return downloadedCount;
+          });
 
           Directory mangaDir = await Manga.getMangaDir();
 
-          String savedDir = "${mangaDir.path}/$name/$chapter";
-          Directory(savedDir).createSync(recursive: true);
+          for (var i=0; i < chaptersLen; i++) {
+            var line = chapters[i].split("|");
+            String chapter = line[0];
 
-          // check if image is exist
-          // if (!File("$savedDir/$fileName").existsSync()) {}
-          await General.downloadImage(url, "$savedDir/$fileName");
+            String chapterPath = "${mangaDir.path}/$alias/$chapter";
+            Directory chapterDir = Directory(chapterPath);
 
-          _controller.runJavaScript("flImageDownloaded();");
+            if (!chapterDir.existsSync()) {
+              chapterDir.createSync(recursive: true);
+            }
 
-          var chapterInfo = await Manga.getChapterDetails(name, chapter);
+            var images = line.sublist(1);
 
-          General.innerDebug(
-              "Downloading image (${chapterInfo['count']}/$imagesCount) from $url");
+            for (var i=0; i < images.length; i++) {
+              int idx = i + 1;
+              String url = images[i];
+
+              await General.downloadImage(preUrl + url, "$chapterPath/$idx");
+            }
+
+            downloadedCount++;
+
+            _jsRun("appSyncDownloadedChapter", "{ alias: '$alias', chapter: { name: '$chapter', itemsCount: ${images.length} } }");
+          }
+        },
+      )
+      ..addJavaScriptChannel(
+        'flDownloadChapter',
+        onMessageReceived: (JavaScriptMessage data) async {
+          if (!_isNotificationsWorking) {
+            _requestNotificationPolicyAccess();
+            return;
+          }
+
+          var payload = data.message.split(";");
+          var [alias, name, image, chapter] = payload[0].split("|");
+
+          await Manga.downloadMangaInfo(alias, name, image);
+
+          var images = payload[1].split("|");
+          var imagesLen = images.length;
+
+          Directory mangaDir = await Manga.getMangaDir();
+
+          String chapterPath = "${mangaDir.path}/$alias/$chapter";
+          Directory chapterDir = Directory(chapterPath);
+          if (!chapterDir.existsSync()) {
+            chapterDir.createSync(recursive: true);
+          }
+
+          String title = "$name - $chapter";
+          String description = "Downloading $imagesLen images";
+          int downloadedCount = 0;
+
+          _sendProgressNotification(title, description, imagesLen, () {
+            return downloadedCount;
+          });
+
+          for (var i=0; i < imagesLen; i++) {
+            int idx = i + 1;
+            String url = images[i];
+
+            General.downloadImage(url, "$chapterPath/$idx").then((bool _) async {
+              downloadedCount++;
+            });
+          }
         },
       )
 
@@ -246,21 +351,146 @@ class _MyWebViewState extends State<ChildWidget> {
     _renderHtml(_controller);
   }
 
+  Future<void> _setupNotifications() async {
+    const AndroidInitializationSettings initializationSettingsAndroid =
+      AndroidInitializationSettings('notif_download');
+
+    // final List<DarwinNotificationCategory> darwinNotificationCategories =
+    //     <DarwinNotificationCategory>[
+    //       DarwinNotificationCategory(
+    //         darwinNotificationCategoryText,
+    //         actions: <DarwinNotificationAction>[
+    //           DarwinNotificationAction.text(
+    //             'text_1',
+    //             'Action 1',
+    //             buttonTitle: 'Send',
+    //             placeholder: 'Placeholder',
+    //           ),
+    //         ],
+    //       ),
+    //       DarwinNotificationCategory(
+    //         darwinNotificationCategoryPlain,
+    //         actions: <DarwinNotificationAction>[
+    //           DarwinNotificationAction.plain('id_1', 'Action 1'),
+    //           DarwinNotificationAction.plain(
+    //             'id_2',
+    //             'Action 2 (destructive)',
+    //             options: <DarwinNotificationActionOption>{
+    //               DarwinNotificationActionOption.destructive,
+    //             },
+    //           ),
+    //           DarwinNotificationAction.plain(
+    //             navigationActionId,
+    //             'Action 3 (foreground)',
+    //             options: <DarwinNotificationActionOption>{
+    //               DarwinNotificationActionOption.foreground,
+    //             },
+    //           ),
+    //           DarwinNotificationAction.plain(
+    //             'id_4',
+    //             'Action 4 (auth required)',
+    //             options: <DarwinNotificationActionOption>{
+    //               DarwinNotificationActionOption.authenticationRequired,
+    //             },
+    //           ),
+    //         ],
+    //         options: <DarwinNotificationCategoryOption>{
+    //           DarwinNotificationCategoryOption.hiddenPreviewShowTitle,
+    //         },
+    //       ),
+    //     ];
+
+    // final IOSInitializationSettings initializationSettingsIOS =
+    //     IOSInitializationSettings(
+    //       requestAlertPermission: false,
+    //       requestBadgePermission: false,
+    //       requestSoundPermission: false,
+    //       notificationCategories: darwinNotificationCategories,
+    //     );
+
+    final InitializationSettings initializationSettings = InitializationSettings(
+      android: initializationSettingsAndroid,
+      // iOS: initializationSettingsIOS,
+    );
+
+    await flutterLocalNotificationsPlugin.initialize(
+      settings: initializationSettings,
+      onDidReceiveNotificationResponse: selectNotificationStream.add,
+      onDidReceiveBackgroundNotificationResponse: notificationTapBackground,
+    );
+
+    final NotificationAppLaunchDetails? notificationAppLaunchDetails = await flutterLocalNotificationsPlugin.getNotificationAppLaunchDetails();
+    // if (notificationAppLaunchDetails?.didNotificationLaunchApp ?? false) {
+    //   selectedNotificationPayload = notificationAppLaunchDetails!.notificationResponse?.payload;
+    // }
+
+    _isNotificationsWorking = notificationAppLaunchDetails?.didNotificationLaunchApp ?? false;
+  }
+  Future<void> _requestNotificationPolicyAccess() async {
+    final AndroidFlutterLocalNotificationsPlugin? androidImplementation =
+        flutterLocalNotificationsPlugin
+            .resolvePlatformSpecificImplementation<
+              AndroidFlutterLocalNotificationsPlugin
+            >();
+
+    final bool? grantedNotificationPermission = await androidImplementation
+        ?.requestNotificationsPermission();
+
+    if (grantedNotificationPermission ?? false) {
+      _isNotificationsWorking = true;
+    }
+  }
+
+  Future<void> _sendProgressNotification(String title, String description, int total, int Function() getProgress) async {
+    notificationId++;
+    final int progressId = notificationId;
+
+    while (getProgress() < total) {
+      await Future<void>.delayed(const Duration(seconds: 1), () async {
+        final AndroidNotificationDetails androidNotificationDetails =
+          AndroidNotificationDetails(
+            title,
+            title,
+            channelDescription: description,
+            channelShowBadge: false,
+            importance: Importance.max,
+            priority: Priority.high,
+            onlyAlertOnce: true,
+            showProgress: true,
+            maxProgress: total,
+            progress: getProgress(),
+          );
+        final NotificationDetails notificationDetails = NotificationDetails(
+          android: androidNotificationDetails,
+        );
+        await flutterLocalNotificationsPlugin.show(
+          id: progressId,
+          title: title,
+          body: description,
+          notificationDetails: notificationDetails,
+          payload: "item x",
+        );
+      });
+    }
+  }
+
   Future<void> syncTemplate() async {
     await MyHtml.syncHtmlTemplate();
     host = await MyHtml.getHost();
   }
 
   Future<void> _renderHtml(controller) async {
+    await _setupNotifications();
     String content = await MyHtml.getHtml(host);
     final String htmlBase64 = base64Encode(
       const Utf8Encoder().convert(content),
     );
     controller.loadRequest(Uri.parse("data:text/html;base64,$htmlBase64"));
+
   }
 
   Future<void> _insertMangaList() async {
-    await Manga.runScriptForMangaList(_controller.runJavaScript);
+    await Manga.runScriptForMangaList(_jsRun);
   }
 
   void _jsRun(String fn, String attrs) {
@@ -268,45 +498,6 @@ class _MyWebViewState extends State<ChildWidget> {
 
     General.innerDebug("_jsRun: $value");
     _controller.runJavaScript(value);
-  }
-
-  Future<void> _syncMangaInfo(String alias) async {
-    String currentChapter = await Manga.getLastReadedChapter(alias);
-    if (currentChapter != "") {
-      _jsRun("appSyncMangaInfo", "{ currentChapter: '$currentChapter' }");
-    }
-
-    _syncChapters(alias);
-  }
-  Future<void> _syncChapters(String name) async {
-    flSelectMangaLastId = (flSelectMangaLastId + 1) % 255;
-    num currentId = flSelectMangaLastId;
-
-    await Future.delayed(chaptersSyncTimeout);
-
-    if (currentId != flSelectMangaLastId) return;
-
-    Directory mangaDir = await Manga.getMangaDir();
-    Directory selMangaDir = Directory("${mangaDir.path}/$name");
-
-    if (!selMangaDir.existsSync()) return;
-
-    General.innerDebug("_syncChapters: Selected manga: $name");
-
-    Iterable chapters = General.getDirSortedItems(selMangaDir.listSync().whereType<Directory>());
-
-    List<String> jsData = [];
-
-    for (var i = 0; i < chapters.length; i++) {
-      var chapter = chapters.elementAt(i);
-
-      String chapterName = chapter['alias'];
-      var chapterInfo = await Manga.getChapterDetails(name, chapterName);
-
-      jsData.add("{ name: '$chapterName', itemsCount: ${chapterInfo['count']}, isDownloaded: true }");
-    }
-
-    _controller.runJavaScript("flSyncChapters([${jsData.join(',')}]);");
   }
 
   @override

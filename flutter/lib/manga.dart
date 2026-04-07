@@ -18,6 +18,48 @@ class Manga {
     return result;
   }
 
+  static Future<dynamic> getMangaInfo(String alias) async {
+    Directory mangaDir = await getMangaDir();
+    Directory manga = Directory("${mangaDir.path}/$alias");
+
+    if (!manga.existsSync()) return;
+
+    String name = await File("${manga.path}/$MANGA_INFO").readAsString();
+    String image = await General.getImageBase64("${manga.path}/$MANGA_COVER");
+    String currentChapter = await Manga.getLastReadedChapter(alias);
+
+    return {
+      "mangaDir": manga,
+      "name": name,
+      "image": image,
+      "currentChapter": currentChapter,
+    };
+  }
+
+  static Future<void> syncMangaInfo(String alias, void Function(String, String) jsRun) async {
+    var info = await getMangaInfo(alias);
+
+    if (info == null) {
+      General.innerDebug("Manga.syncMangaInfo: $alias not found in device");
+      return;
+    }
+
+    Iterable chapters = General.getDirSortedItems(info['mangaDir'].listSync().whereType<Directory>());
+
+    List<String> jsData = [];
+
+    for (var i = 0; i < chapters.length; i++) {
+      var chapter = chapters.elementAt(i);
+
+      String chapterName = chapter['alias'];
+      var chapterInfo = await Manga.getChapterDetails(alias, chapterName);
+
+      jsData.add("{ name: '$chapterName', itemsCount: ${chapterInfo['count']}, isDownloaded: true }");
+    }
+
+    jsRun("appSyncMangaInfo", "{ alias: '$alias', name: '" + info['name'] + "', currentChapter: '" + info['currentChapter'] + "', chapters: [ ${jsData.join(',')} ], image: '" + info['image'] + "' }");
+  }
+
   static Future<String> getLastReadedChapter(String alias) async {
     Directory mangaDir = await getMangaDir();
     File saveFile = File("${mangaDir.path}/$alias/$MANGA_SAVE");
@@ -77,10 +119,10 @@ class Manga {
       await General.downloadImage(url, "${manga.path}/$MANGA_COVER");
   }
 
-  static runScriptForMangaList(callback) async {
+  static runScriptForMangaList(void Function(String, String) jsRun) async {
       Directory mangaDir = await getMangaDir();
 
-      callback("flSyncMangaList([]);");
+      jsRun("appSyncMangaList", "[]");
 
       mangaDir.listSync().forEach((manga) async {
         String alias = manga.path.split("/").last;
@@ -99,7 +141,7 @@ class Manga {
         String insertData = "{ name: '$name', alias: '$alias', image: '$image'$savedChapter }";
         General.innerDebug(insertData);
 
-        callback("flInsertManga($insertData);");
+        jsRun("appInsertManga", "$insertData");
       });
   }
 

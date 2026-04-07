@@ -2,9 +2,10 @@
 import { inject, ref, computed, defineProps, defineEmits } from "vue";
 import { useRoute, useRouter } from "vue-router";
 
-import { isApp } from "../../helper/main";
+import { isApp, getImgUrl, fetchImages } from "../../helper/main.js";
 
 import iconDownload from "./iconDownload.svg";
+import iconRemove from "./iconRemove.svg";
 
 const LIMIT = 7;
 
@@ -16,6 +17,7 @@ const { lastReadChapter } = defineProps(["lastReadChapter"]);
 
 const showAll = ref(false);
 
+const info = computed(() => store.getState().mangaInfo ?? {});
 const alias = computed(() => route.params.alias);
 
 const chapters = computed(() => store.getState().chapters ?? []);
@@ -37,6 +39,16 @@ const filteredChapters = computed(() => {
   return res;
 });
 
+async function handleDownload(chapter) {
+  const { alias, name, image } = info.value;
+
+  const data = await fetchImages(alias, chapter);
+
+  let payload = [alias, name, getImgUrl(image), chapter].join("|");
+  payload += ";" + data.map(getImgUrl).join("|");
+
+  flDownloadChapter.postMessage(payload);
+}
 function handleShowMore() {
   showAll.value = !showAll.value;
 }
@@ -54,21 +66,41 @@ function handleShowMore() {
         v-for="(item, index) of filteredChapters"
         :key="`${item.name}_${item.isDownloaded}`"
       >
-        <RouterLink
+        <div
           :class="{
             'p-detailsChapters-item': true,
             'p-detailsChapters-item--continue': item.name == lastReadChapter,
-            'p-detailsChapters-item--downloaded': item.isDownloaded,
           }"
-          :to="{ name: 'chapter', params: { alias, chapter: item.name } }"
+          
         >
           <span class="p-detailsChapters-item__name">Ch. {{ item.name }}</span>
-          <span v-if="item.name == lastReadChapter" class="p-detailsChapters-item__hint">CURRENT</span>
+          <span
+            v-if="item.name == lastReadChapter"
+            class="p-detailsChapters-item__hint"
+            >CURRENT</span
+          >
 
-          <span v-if="isApp" class="p-detailsChapters-item__control">
-            <img :src="iconDownload" width="16px" />
-          </span>
-        </RouterLink>
+          <RouterLink :to="{ name: 'chapter', params: { alias, chapter: item.name } }" />
+
+          <template v-if="isApp">
+            <button
+              v-if="item.isDownloaded"
+              class="p-detailsChapters-item__control"
+              type="button"
+              @click="handleRemove(item.name)"
+            >
+              <img :src="iconRemove" width="16px" />
+            </button>
+            <button
+              v-else
+              class="p-detailsChapters-item__control"
+              type="button"
+              @click="handleDownload(item.name)"
+            >
+              <img :src="iconDownload" width="16px" />
+            </button>
+          </template>
+        </div>
       </template>
     </div>
 
@@ -110,8 +142,8 @@ function handleShowMore() {
   padding: var(--side-gap) var(--control-size) var(--side-gap) var(--side-gap);
   background-color: #101010;
   color: #adaaaa;
-  text-decoration: none;
 }
+
 .p-detailsChapters-item--continue {
   background-color: #131313;
   color: #ffffff;
@@ -126,21 +158,34 @@ function handleShowMore() {
 }
 .p-detailsChapters-item__hint {
   display: block;
-  color: #9BA8FF;
+  color: var(--color-primary);
   font-size: 10px;
   font-weight: 600;
   line-height: 1.5;
 }
 
+.p-detailsChapters-item a {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  color: inherit;
+  text-decoration: none;
+}
+
 .p-detailsChapters-item__control {
+  z-index: 1;
   position: absolute;
   right: 0;
   top: 0;
+  border: none;
   width: var(--control-size);
   height: 100%;
   display: flex;
   justify-content: center;
   align-items: center;
+  background: none;
 }
 
 .p-detailsChapters-more {

@@ -54,7 +54,7 @@ const className = computed(() => [
 }
 
 .ui-button_variant-primary {
-  background: #9ba8ff;
+  background: var(--color-primary);
   color: #001c8e;
 }
 .ui-button_variant-default {
