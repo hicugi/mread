@@ -16,7 +16,7 @@ const myElm = useTemplateRef("myElm");
 const images = ref([]);
 
 const info = computed(() => store.getState().mangaInfo);
-const name = computed(() => info?.name ?? "");
+const name = computed(() => info.value?.name ?? "");
 const alias = computed(() => route.params.alias);
 const chapter = computed(() => route.params.chapter ?? "");
 const chapters = computed(() => store.getState().chapters ?? []);

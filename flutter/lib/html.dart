@@ -1,6 +1,8 @@
 import 'package:http/http.dart' as http;
 import 'dart:io';
 import 'dart:async';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+
 import './general.dart';
 
 String hostUrl = 'http://127.0.0.1:8000/';
@@ -57,8 +59,6 @@ class MyHtml {
   }
 
   static Future<bool> downloadHtml(String url) async {
-    File file = await getHostFile();
-
     General.innerDebug("[downloadHtml] downloading html from $url");
 
     try {
@@ -70,7 +70,7 @@ class MyHtml {
       General.innerDebug("[downloadHtml] got template ${response.statusCode}");
     } catch(error) {
       await htmlForSettingHost();
-      print("Error: $error");
+      General.innerDebug("Error: $error");
     }
 
     return true;
@@ -114,7 +114,7 @@ class MyHtml {
         </body></html>''');
     } catch (error) {
       General.innerDebug("Couldn't create html for for settingup host");
-      print("Error: $error");
+      General.innerDebug("Error: $error");
     }
   }
 

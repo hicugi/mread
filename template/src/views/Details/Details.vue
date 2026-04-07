@@ -6,6 +6,7 @@ import MangaHeader from "../../components/manga/header.vue";
 import DetailsChapters from "./Chapters.vue";
 import ChapterControls from "../../components/manga/chapter/controls.vue";
 import UiButton from "../../components/ui/Button.vue";
+import DownloadDialog from "./DownloadDialog.vue";
 
 import { api } from "../../api";
 import { fetchImages, isApp, getImgUrl } from "../../helper/main.js";
@@ -23,6 +24,7 @@ const chaptersList = ref([]);
 const chaptersOnDevice = ref([]);
 const lastReadChapter = ref(null);
 const images = ref([]);
+const downloadDialogActive = ref(false);
 
 const alias = computed(() => route.params.alias);
 const info = computed(() => store.getState().mangaInfo);
@@ -53,63 +55,6 @@ function handleRemoveManga() {
   }
 }
 
-window.appSyncMangaInfo = (obj) => {
-  const { currentChapter } = obj;
-
-  if (currentChapter) {
-    lastReadChapter.value = currentChapter;
-  }
-
-  store.setState((prev) => ({
-    ...prev,
-    mangaInfo: {
-      ...prev.mangaInfo,
-      ...obj,
-    },
-  }));
-};
-window.flSyncChapters = (data) => {
-  chaptersOnDevice.value = data.reverse();
-};
-
-function handleDownload(item) {
-  const chapterName = item.name;
-  const chapters = chaptersList.value;
-
-  const list = (() => {
-    if (chapterName === undefined) {
-      return chapters;
-    }
-
-    const result = [];
-    for (const elm of chaptersList2.value) {
-      result.push(elm);
-      if (elm.name === chapterName) break;
-    }
-    return result;
-  })();
-
-  const question = (() => {
-    let count = list.length;
-    if (count === chapters.length) {
-      count = "all";
-    }
-
-    return `Download ${count} items? Select no for one chapter`;
-  })();
-
-  if (confirm(question)) {
-    download(list);
-    return;
-  }
-
-  const singleChapter = list.find((item) => item.name === chapterName);
-  download([singleChapter]);
-}
-function handleBackClick() {
-  router.push({ name: "home" });
-}
-
 const combineChapters = (local, online) => {
   if (!local.length) return online;
   if (!online.length) return local;
@@ -137,8 +82,61 @@ const combineChapters = (local, online) => {
   return res;
 };
 
+window.appSyncMangaInfo = (payload) => {
+  const { plChapters, plInfo } = (() => {
+    const { chapters, ...info } = payload;
+    return { plChapters: chapters, plInfo: info };
+  })();
+
+  if (plInfo.alias !== alias.value) return;
+
+  if (plInfo.currentChapter) {
+    lastReadChapter.value = plInfo.currentChapter;
+  }
+
+  store.setState((prev) => ({
+    ...prev,
+    mangaInfo: {
+      ...prev.mangaInfo,
+      ...plInfo,
+    },
+    chapters: combineChapters(plChapters, chapters.value),
+  }));
+};
+
+window.appSyncDownloadedChapter = (payload) => {
+  if (alias.value !== payload.alias) return;
+
+  const newValues = [
+    ...chaptersOnDevice.value,
+    payload.chapter,
+  ];
+  chaptersOnDevice.value = newValues;
+
+  store.setState((prev) => ({
+    ...prev,
+    chapters: combineChapters(newValues, chapters.value),
+  }));
+}
+
+function handleBackClick() {
+  router.push({ name: "home" });
+}
+function openDownloadDialog() {
+  downloadDialogActive.value = true;
+}
+function closeDownloadDialog() {
+  downloadDialogActive.value = false;
+}
+
 onMounted(() => {
   const { alias } = route.params;
+
+  store.setState((prev) => ({
+    ...prev,
+    mangaInfo: {},
+    chapters: [],
+  }));
 
   if (isApp) {
     flSelectManga.postMessage(alias);
@@ -151,7 +149,7 @@ onMounted(() => {
     store.setState((prev) => ({
       ...prev,
       mangaInfo: dataInfo,
-      chapters: combineChapters(chaptersOnDevice, chapters),
+      chapters: combineChapters(chaptersOnDevice.value, chapters),
     }));
   });
 });
@@ -164,13 +162,14 @@ onMounted(() => {
         class="p-details__back-btn"
         :link="{ name: 'home' }"
         size="large"
+        @click="openDownloadDialog"
       >
         <img :src="iconBack" width="18px" />
       </UiButton>
     </div>
 
     <header
-      v-if="info"
+      v-if="info?.image"
       class="p-details-header"
       :style="{ backgroundImage: `url('${getImgUrl(info.image)}')` }"
     >
@@ -187,7 +186,7 @@ onMounted(() => {
             size="large"
             v-text="headerChapter.label"
           />
-          <UiButton v-if="isApp" size="large">
+          <UiButton v-if="isApp" size="large" @click="openDownloadDialog">
             <img :src="iconDownload" width="18px" />
           </UiButton>
         </div>
@@ -195,6 +194,7 @@ onMounted(() => {
     </header>
 
     <DetailsChapters class="container" :lastReadChapter="lastReadChapter" />
+    <DownloadDialog :active="downloadDialogActive" @close="closeDownloadDialog" />
   </div>
 </template>
 

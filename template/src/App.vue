@@ -1,8 +1,6 @@
 <script setup>
 import { ref, provide } from "vue";
-
 import DownloadBar from "./components/DownloadBar.vue";
-import { HOST_URL_KEY } from "./helper/main.js";
 
 const store = ref({});
 
@@ -10,28 +8,6 @@ provide("store", {
   getState: () => store.value,
   setState: (fn) => store.value = fn(store.value),
 });
-
-
-window[HOST_URL_KEY] = (() => {
-  const DEV_PORT = 5173;
-  const SERVER_PORT = 8000;
-
-  if (location.host.includes(DEV_PORT)) {
-    return location.origin.replace(DEV_PORT, SERVER_PORT);
-  }
-
-  return "http://127.0.0.1:8000";
-})();
-window.flSetHost = (value) => {
-  window[HOST_URL_KEY] = value;
-}
-
-function handleDownloadSuccess() {
-  store.value = {
-    ...store.value,
-    download: null,
-  };
-}
 </script>
 
 <template>
