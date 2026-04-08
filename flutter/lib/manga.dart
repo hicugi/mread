@@ -122,26 +122,15 @@ class Manga {
   static runScriptForMangaList(void Function(String, String) jsRun) async {
       Directory mangaDir = await getMangaDir();
 
-      jsRun("appSyncMangaList", "[]");
+      jsRun("appClearMangaList", "");
 
       mangaDir.listSync().forEach((manga) async {
         String alias = manga.path.split("/").last;
-        String image = await General.getImageBase64("${manga.path}/$MANGA_COVER");
+        var info = await getMangaInfo(alias);
 
-        File nameFile = File("${manga.path}/$MANGA_INFO");
-        String name = nameFile.readAsStringSync();
+        if (info == null) return;
 
-        General.innerDebug("Inserting locale manga: $alias $name");
-
-        String savedChapter = await getLastReadedChapter(name);
-        if (savedChapter != "") {
-          savedChapter = ", currentChapter: '$savedChapter'";
-        }
-
-        String insertData = "{ name: '$name', alias: '$alias', image: '$image'$savedChapter }";
-        General.innerDebug(insertData);
-
-        jsRun("appInsertManga", "$insertData");
+        jsRun("appInsertManga", "{ alias: '$alias', name: '" + info['name'] + "', currentChapter: '" + info['currentChapter'] + "', image: '" + info['image'] + "' }");
       });
   }
 

@@ -37,11 +37,12 @@ export const getMangaChapters = async (name) => {
 
 export async function getMangaInfo(alias) {
   const content = await fs.readFile(path.resolve(MANGA_DIR, alias, ".meta"), "utf-8");
-  const { name } = decode(content);
+  const { name, isTop } = decode(content);
 
   return {
     name,
     alias,
     image: `manga/${alias}/cover.jpg`,
+    isTop: Boolean(isTop),
   };
 }

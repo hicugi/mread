@@ -82,6 +82,7 @@ class _ParentWidgetState extends State<MyWebView> {
     super.initState();
 
     General.innerDebug("ParentWidgetState init");
+    MyHtml.init();
     content = MyHtml.getHtml(host);
   }
 

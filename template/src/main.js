@@ -10,7 +10,7 @@ import "./style.css";
 import { isApp } from "./helper/main.js";
 
 import App from "./App.vue";
-import Home from "./views/Home.vue";
+import Home from "./views/Home/Home.vue";
 import Details from "./views/Details/Details.vue";
 import Chapter from "./views/Chapter.vue";
 
