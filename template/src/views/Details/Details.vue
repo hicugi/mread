@@ -171,8 +171,11 @@ onMounted(() => {
     <header
       v-if="info?.image"
       class="p-details-header"
-      :style="{ backgroundImage: `url('${getImgUrl(info.image)}')` }"
     >
+    <div 
+      class="p-details-header__bg"
+      :style="{ backgroundImage: `url('${getImgUrl(info.image)}')` }"
+      />
       <div class="container">
         <h1>{{ info.name }}</h1>
 
@@ -213,9 +216,8 @@ onMounted(() => {
   z-index: 0;
   position: relative;
   margin-bottom: 48px;
+  padding-bottom: 24px;
   height: 574px;
-  background: no-repeat top;
-  background-size: 100% auto;
   display: grid;
   align-items: flex-end;
 }
@@ -233,6 +235,18 @@ onMounted(() => {
     #0e0e0e 100%
   );
   content: "";
+}
+.p-details-header__bg {
+  z-index: -2;
+  position: absolute;
+  left: 50%;
+  top: 0;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 740px;
+  height: 100%;
+  background: no-repeat top;
+  background-size: 100% auto;
 }
 
 .p-details-header__controls {

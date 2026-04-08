@@ -9,6 +9,15 @@ String hostUrl = 'http://127.0.0.1:8000/';
 var isGetHtmlRunning = false;
 
 class MyHtml {
+  static Future<void> init() async {
+    try {
+      hostUrl = await getHost();
+      General.innerDebug("MyHtml.init initial host $hostUrl from cache");
+    } catch(_) {
+      General.innerDebug("MyHtml.init initial host $hostUrl");
+    }
+  }
+
   static Future<File> getHostFile() async {
     return General.getFile("addr");
   }
