@@ -38,10 +38,13 @@ class General {
     return File("${local.path}/$path");
   }
 
-  static Future<String> readFile(String path) async {
+  static Future<String?> readFile(String path) async {
     Directory local = await getLocaleDir();
     File file = await File("${local.path}/$path");
-    return file.readAsStringSync();
+
+    if (!file.existsSync()) return null;
+
+    return await file.readAsString();
   }
 
   static Iterable getDirSortedItems(dirItems) {

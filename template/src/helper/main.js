@@ -23,6 +23,11 @@ export const getImageSource = (str) => {
   return isBase64 ? str : window[HOST_URL_KEY] 
 }
 export function getImgUrl(str) {
+  if (str?.startsWith === undefined) {
+    console.log(typeof str, str);
+    return "";
+  }
+
   const isBase64 = str.startsWith("data:file;base64");
   if (isBase64) return str;
 
@@ -35,4 +40,19 @@ export function getImgUrl(str) {
 export const fetchImages = (name, chapter) => {
   return api.get(`/images/${name}/${chapter}`);
 };
+export const fetchChapters = (alias, store) => {
+  return api.get(`/chapters/${alias}`).then((data) => {
+    const { chapters, ...dataInfo } = data;
+    chapters.reverse();
+
+    store.setState((prev) => ({
+      ...prev,
+      mangaInfo: ({
+        ...dataInfo,
+        ...prev.mangaInfo,
+        chaptersOnline: chapters,
+      }),
+    }));
+  });
+}
 

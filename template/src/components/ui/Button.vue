@@ -66,4 +66,8 @@ const className = computed(() => [
   background-color: var(--color-danger);
   color: white;
 }
+
+.ui-button[disabled] {
+  opacity: 0.3;
+}
 </style>

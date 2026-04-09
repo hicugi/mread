@@ -8,8 +8,10 @@ import ChapterControls from "../../components/manga/chapter/controls.vue";
 import UiButton from "../../components/ui/Button.vue";
 import DownloadDialog from "./DownloadDialog.vue";
 
-import { api } from "../../api";
-import { fetchImages, isApp, getImgUrl } from "../../helper/main.js";
+import { api } from "../../api.js";
+import { savedChapters } from "../../helper/global.js";
+import { fetchImages, isApp, getImgUrl, fetchChapters } from "../../helper/main.js";
+import { useManga } from "../../helper/useManga.js";
 
 import iconBack from "../iconBack.svg";
 import iconDownload from "./iconDownload.svg";
@@ -18,23 +20,25 @@ const route = useRoute();
 const router = useRouter();
 const store = inject("store");
 
+store.clear();
+
 const myElm = useTemplateRef("myElm");
 
-const chaptersList = ref([]);
-const chaptersOnDevice = ref([]);
-const lastReadChapter = ref(null);
 const images = ref([]);
 const downloadDialogActive = ref(false);
 
 const alias = computed(() => route.params.alias);
 const info = computed(() => store.getState().mangaInfo);
 
-const chapters = computed(() => store.getState().chapters ?? []);
-const firstChapter = computed(() => chapters.value.at(-1)?.name);
+const { chaptersAll } = useManga(alias.value);
+const firstChapter = computed(() => chaptersAll.value?.at(-1)?.name);
+const lastReadChapter = computed(() => savedChapters.value[alias.value]);
 
 const headerChapter = computed(() => {
   const last = lastReadChapter.value;
   const first = firstChapter.value;
+
+  if (!last && !first) return;
 
   if (last) {
     return {
@@ -49,79 +53,7 @@ const headerChapter = computed(() => {
   };
 });
 
-function handleRemoveManga() {
-  if (confirm("Delete every chapter for current manga?")) {
-    flRemoveManga.postMessage("");
-  }
-}
 
-const combineChapters = (local, online) => {
-  if (!local.length) return online;
-  if (!online.length) return local;
-
-  const localKeys = {};
-  for (const item of local) {
-    localKeys[item.name] = item;
-  }
-
-  const res = [...online];
-
-  for (let i = 0; i < res.length; i++) {
-    const item = res[i];
-
-    if (localKeys[item.name] !== undefined) {
-      const loc = localKeys[item.name];
-      res[i] = {
-        ...res[i],
-        ...loc,
-        isDownloaded: true,
-      };
-    }
-  }
-
-  return res;
-};
-
-window.appSyncMangaInfo = (payload) => {
-  const { plChapters, plInfo } = (() => {
-    const { chapters, ...info } = payload;
-    return { plChapters: chapters, plInfo: info };
-  })();
-
-  if (plInfo.alias !== alias.value) return;
-
-  if (plInfo.currentChapter) {
-    lastReadChapter.value = plInfo.currentChapter;
-  }
-
-  store.setState((prev) => ({
-    ...prev,
-    mangaInfo: {
-      ...prev.mangaInfo,
-      ...plInfo,
-    },
-    chapters: combineChapters(plChapters, chapters.value),
-  }));
-};
-
-window.appSyncDownloadedChapter = (payload) => {
-  if (alias.value !== payload.alias) return;
-
-  const newValues = [
-    ...chaptersOnDevice.value,
-    payload.chapter,
-  ];
-  chaptersOnDevice.value = newValues;
-
-  store.setState((prev) => ({
-    ...prev,
-    chapters: combineChapters(newValues, chapters.value),
-  }));
-}
-
-function handleBackClick() {
-  router.push({ name: "home" });
-}
 function openDownloadDialog() {
   downloadDialogActive.value = true;
 }
@@ -132,26 +64,11 @@ function closeDownloadDialog() {
 onMounted(() => {
   const { alias } = route.params;
 
-  store.setState((prev) => ({
-    ...prev,
-    mangaInfo: {},
-    chapters: [],
-  }));
-
   if (isApp) {
     flSelectManga.postMessage(alias);
   }
 
-  api.get(`/chapters/${alias}`).then((data) => {
-    const { chapters, ...dataInfo } = data;
-    chaptersList.value = chapters.reverse();
-
-    store.setState((prev) => ({
-      ...prev,
-      mangaInfo: dataInfo,
-      chapters: combineChapters(chaptersOnDevice.value, chapters),
-    }));
-  });
+  fetchChapters(alias, store);
 });
 </script>
 
@@ -196,7 +113,7 @@ onMounted(() => {
       </div>
     </header>
 
-    <DetailsChapters class="container" :lastReadChapter="lastReadChapter" />
+    <DetailsChapters class="container" :chapters="chaptersAll" :lastReadChapter="lastReadChapter" />
     <DownloadDialog :active="downloadDialogActive" @close="closeDownloadDialog" />
   </div>
 </template>

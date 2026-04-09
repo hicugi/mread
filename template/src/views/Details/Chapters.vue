@@ -13,16 +13,22 @@ const route = useRoute();
 const router = useRouter();
 const store = inject("store");
 
-const { lastReadChapter } = defineProps(["lastReadChapter"]);
+const { chapters, lastReadChapter } = defineProps({
+  chapters: {
+    default: [],
+  },
+  lastReadChapter: {
+    default: undefined,
+  },
+});
 
 const showAll = ref(false);
 
 const info = computed(() => store.getState().mangaInfo ?? {});
 const alias = computed(() => route.params.alias);
 
-const chapters = computed(() => store.getState().chapters ?? []);
 const filteredChapters = computed(() => {
-  const res = [...(store.getState().chapters ?? [])];
+  const res = [...chapters];
 
   if (showAll.value || res.length <= 7) {
     return res;
@@ -55,7 +61,7 @@ function handleShowMore() {
 </script>
 
 <template>
-  <section v-if="chapters.length" class="p-detailsChapters">
+  <section v-if="chapters?.length" class="p-detailsChapters">
     <header class="p-detailsChapters__header">
       <h2>Chapters</h2>
       <p>{{ chapters.length }} Chapters Total</p>
@@ -71,7 +77,6 @@ function handleShowMore() {
             'p-detailsChapters-item': true,
             'p-detailsChapters-item--continue': item.name == lastReadChapter,
           }"
-          
         >
           <span class="p-detailsChapters-item__name">Ch. {{ item.name }}</span>
           <span
@@ -80,7 +85,9 @@ function handleShowMore() {
             >CURRENT</span
           >
 
-          <RouterLink :to="{ name: 'chapter', params: { alias, chapter: item.name } }" />
+          <RouterLink
+            :to="{ name: 'chapter', params: { alias, chapter: item.name } }"
+          />
 
           <template v-if="isApp">
             <button
