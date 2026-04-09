@@ -24,7 +24,9 @@ class Manga {
 
     if (!manga.existsSync()) return;
 
-    String name = await File("${manga.path}/$MANGA_INFO").readAsString();
+    String? name = await General.readFile("manga/$alias/$MANGA_INFO");
+    if (name == null) return;
+
     String image = await General.getImageBase64("${manga.path}/$MANGA_COVER");
     String currentChapter = await Manga.getLastReadedChapter(alias);
 
@@ -60,6 +62,15 @@ class Manga {
     jsRun("appSyncMangaInfo", "{ alias: '$alias', name: '" + info['name'] + "', currentChapter: '" + info['currentChapter'] + "', chapters: [ ${jsData.join(',')} ], image: '" + info['image'] + "' }");
   }
 
+  static Future<String?> getLastReadManga() async {
+    Directory mangaDir = await getMangaDir();
+    File saveFile = File("${mangaDir.path}/$MANGA_SAVE");
+
+    if (saveFile.existsSync()) {
+      String chapter = await saveFile.readAsString();
+      return chapter;
+    }
+  }
   static Future<String> getLastReadedChapter(String alias) async {
     Directory mangaDir = await getMangaDir();
     File saveFile = File("${mangaDir.path}/$alias/$MANGA_SAVE");
@@ -87,6 +98,14 @@ class Manga {
 
     saveFile.writeAsStringSync(chapter);
     General.innerDebug("Last readed chapter saved $chapter");
+
+    File lastReadManga = File("${listDir.path}/$MANGA_SAVE");
+
+    if (!lastReadManga.existsSync()) {
+      saveFile.create();
+    }
+
+    lastReadManga.writeAsStringSync("$alias");
   }
 
   static Future<Map<String, dynamic>> getChapterDetails(String name, String chapter) async {
@@ -124,19 +143,21 @@ class Manga {
 
       jsRun("appClearMangaList", "");
 
+      String? lastReadManga = await getLastReadManga();
+
       mangaDir.listSync().forEach((manga) async {
         String alias = manga.path.split("/").last;
         var info = await getMangaInfo(alias);
 
         if (info == null) return;
 
-        jsRun("appInsertManga", "{ alias: '$alias', name: '" + info['name'] + "', currentChapter: '" + info['currentChapter'] + "', image: '" + info['image'] + "' }");
+        jsRun("appInsertManga", "{ alias: '$alias', name: '" + info['name'] + "', currentChapter: '" + info['currentChapter'] + "', image: `" + info['image'] + "` }");
       });
   }
 
-  static runScriptForInsertingImgs(String name, String chapter, callback) async {
+  static runScriptForInsertingImgs(String alias, String chapter, callback) async {
     Directory mangaDir = await Manga.getMangaDir();
-    Directory chapterDir = Directory("${mangaDir.path}/$name/$chapter");
+    Directory chapterDir = Directory("${mangaDir.path}/$alias/$chapter");
 
     Iterable items = General.getDirSortedItems(chapterDir
         .listSync()
@@ -148,9 +169,7 @@ class Manga {
 
       String imageBase64 = await General.getImageBase64(image.path);
 
-      callback(
-        "flInsertImage('$imageBase64');",
-      );
+      callback("appInsertImage('$alias', '$chapter', '$imageBase64')");
     }
   }
 }

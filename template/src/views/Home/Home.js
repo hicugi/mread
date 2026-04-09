@@ -1,14 +1,17 @@
-import { ref, onMounted } from "vue";
+import { inject, ref, onBeforeMount, onMounted } from "vue";
 
 import Card from "./Card.vue";
 import UiButton from "../../components/ui/Button.vue";
 
 import { isApp, HOST_URL_KEY, getImgUrl } from "../../helper/main.js";
+import { lastReadManga, savedChapters } from "../../helper/global.js";
 import { api } from "../../api.js";
 
 import iconRead from "./iconRead.svg";
+import iconContinue from "./iconContinue.svg";
 
 const list = ref([]);
+const listOnDevice = ref([]);
 
 export default {
   components: {
@@ -18,9 +21,11 @@ export default {
 
   data: () => ({
     iconRead,
+    iconContinue,
 
+    savedChapters,
     list,
-    listOnDevice: [],
+    listOnDevice,
   }),
 
   computed: {
@@ -45,7 +50,13 @@ export default {
     },
 
     onTop() {
-      const item = this.combinedList.find((item) => item.isTop);
+      const list = this.combinedList;
+      if (!list.length) return null;
+
+      const lastRead = list.find((item) => item?.alias == lastReadManga.value);
+      const topItem = list.find((item) => item.isTop);
+      const item = lastRead ?? topItem;
+
       if (!item) return undefined;
 
       return {
@@ -72,9 +83,39 @@ export default {
   },
 
   setup() {
+    const store = inject("store");
+
+    onBeforeMount(() => {
+      store.clear();
+
+      window.appClearMangaList = () => {
+        listOnDevice.value = [];
+      };
+
+      window.appInsertManga = (data) => {
+        const res = [...listOnDevice.value];
+        const idx = res.findIndex((item) => item.alias === data.alias);
+
+        if (idx === -1) {
+          listOnDevice.value.push(data);
+          return;
+        }
+
+        res[idx] = {
+          ...res[idx],
+          ...data,
+        };
+        listOnDevice.value = res;
+      };
+    });
+
     onMounted(async () => {
       if (isApp) {
-        flFetchMangaList.postMessage("");
+        if (!window?.isListSynced) {
+          window.isListSynced = true;
+          flFetchMangaList.postMessage("");
+          flFetchSaves.postMessage("");
+        }
 
         await new Promise((ok) => {
           const interval = setInterval(() => {
@@ -95,15 +136,5 @@ export default {
           console.error(err);
         });
     });
-  },
-
-  onBeforeMount: () => {
-    window.appClearMangaList = () => {
-      this.listOnDevice = [];
-    };
-
-    window.appInsertManga = (data) => {
-      this.listOnDevice = [...this.listOnDevice, data];
-    };
   },
 };

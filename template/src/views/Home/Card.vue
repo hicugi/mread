@@ -1,39 +1,51 @@
 <script setup>
-import { computed, inject } from "vue";
-import { getImgUrl } from "../../helper/main.js";
+import { computed, inject, nextTick } from "vue";
+import { useRouter } from "vue-router";
 
-const { alias, name, image, currentChapter, lastChapter } = defineProps([
+import { getImgUrl } from "../../helper/main.js";
+import { savedChapters } from "../../helper/global.js";
+
+const router = useRouter();
+
+const { alias, name, image, currentChapter } = defineProps([
   "alias",
   "name",
   "image",
   "currentChapter",
-  "lastChapter",
 ]);
 
 const style = computed(() => ({
   backgroundImage: `url('${getImgUrl(image)}')`,
 }));
 
-const emit = defineEmits(["select", "continue"]);
+function handleContinue() {
+  store.setState((prev) => ({
+    ...prev,
+    mangaInfo: {
+      ...prev.mangaInfo,
+      alias,
+      name,
+      image,
+      currentChapter,
+    },
+  }));
 
-const handleSelect = () => {
-  emit("select");
-};
-const openLastChapter = () => {
-  emit("continue", currentChapter);
-};
+  nextTick(() => {
+    router.push({ name: 'chapter', params: { alias, chapter: currentChapter } });
+  });
+}
 </script>
 
 <template>
   <div class="p-homeCard">
     <div class="p-homeCard__img" :style="style">
-      <RouterLink
-        v-if="currentChapter"
+      <button
+        v-if="savedChapters[alias]"
         class="p-homeCard__continue-link"
-        :to="{ name: 'chapter', params: { alias, chapter: currentChapter } }"
+        @click="handleContinue"
       >
-        {{ currentChapter }}
-      </RouterLink>
+        Ch. {{ savedChapters[alias] }}
+      </button>
     </div>
 
     <h3 class="p-homeCard__title"><span>{{ name }}</span></h3>
@@ -57,6 +69,19 @@ const openLastChapter = () => {
   aspect-ratio: 3/4;
   background: no-repeat center;
   background-size: cover;
+}
+.p-homeCard__img button {
+  position: absolute;
+  left: 8px;
+  bottom: 8px;
+  padding: 0 8px;
+  border: none;
+  border-radius: 4px;
+  background: #9ba8ffcc;
+  color: #001C8E;
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 19px;
 }
 .p-homeCard__continue-link {
   position: absolute;
@@ -84,9 +109,9 @@ const openLastChapter = () => {
   z-index: 1;
   position: absolute;
   left: 0;
-  bottom: 0;
+  top: 0;
   width: 100%;
-  height: 50%;
+  height: 100%;
   content: "";
 }
 </style>

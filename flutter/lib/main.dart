@@ -165,7 +165,6 @@ class _MyWebViewState extends State<ChildWidget> {
         },
       )
 
-      // sync manga
       ..addJavaScriptChannel(
         'flFetchMangaList',
         onMessageReceived: (JavaScriptMessage data) async {
@@ -175,7 +174,25 @@ class _MyWebViewState extends State<ChildWidget> {
           await _insertMangaList();
         },
       )
-      ..addJavaScriptChannel('flSyncManga',
+      ..addJavaScriptChannel(
+        'flFetchSaves',
+        onMessageReceived: (JavaScriptMessage data) async {
+          _syncLastReadManga();
+
+          Directory listDir = await Manga.getMangaDir();
+
+          listDir.listSync().forEach((manga) async {
+            String alias = manga.path.split("/").last;
+            String save = await Manga.getLastReadedChapter(alias);
+
+            if (save == "") return;
+
+            _jsRun("appSyncLastReadedChapter", "'$alias', '$save'");
+          });
+        },
+      )
+
+      ..addJavaScriptChannel('flDownloadManga',
           onMessageReceived: (JavaScriptMessage data) async {
         var [alias, name, url] = data.message.split("|");
         await Manga.downloadMangaInfo(alias, name, url);
@@ -192,7 +209,10 @@ class _MyWebViewState extends State<ChildWidget> {
       ..addJavaScriptChannel('flSynchChapterSave',
           onMessageReceived: (JavaScriptMessage data) async {
         var [name, chapter] = data.message.split('|');
-        Manga.saveLastReadedChapter(name, chapter);
+
+        await Manga.saveLastReadedChapter(name, chapter);
+
+        _syncLastReadManga();
       })
       ..addJavaScriptChannel('flInsertImgsFromChapter',
           onMessageReceived: (JavaScriptMessage data) async {
@@ -203,10 +223,8 @@ class _MyWebViewState extends State<ChildWidget> {
       ..addJavaScriptChannel(
         'flDownloadChapters',
         onMessageReceived: (JavaScriptMessage data) async {
-          if (!_isNotificationsWorking) {
-            _requestNotificationPolicyAccess();
-            return;
-          }
+          _isNotificationsWorking = await _requestNotificationPolicyAccess();
+          if (!_isNotificationsWorking) return;
 
           var payload = data.message.split(";");
           var [alias, name, image, preUrl] = payload[0].split("|");
@@ -218,10 +236,13 @@ class _MyWebViewState extends State<ChildWidget> {
 
           String title = "$name";
           String description = "Downloading $chaptersLen chapters";
+          String descriptionDone = "All $chaptersLen chapters downloaded";
           int downloadedCount = 0;
 
-          _sendProgressNotification(title, description, chaptersLen, () {
+          _sendProgressNotification(title, description, descriptionDone, chaptersLen, () {
             return downloadedCount;
+          }).then((_) {
+            _jsRun("appDownloadComplete", "");
           });
 
           Directory mangaDir = await Manga.getMangaDir();
@@ -239,26 +260,25 @@ class _MyWebViewState extends State<ChildWidget> {
 
             var images = line.sublist(1);
 
-            for (var i=0; i < images.length; i++) {
-              int idx = i + 1;
-              String url = images[i];
+            Future<void>.delayed(const Duration(milliseconds: 100), () async {
+              for (var i=0; i < images.length; i++) {
+                int idx = i + 1;
+                String url = images[i];
 
-              await General.downloadImage(preUrl + url, "$chapterPath/$idx");
-            }
-
-            downloadedCount++;
-
-            _jsRun("appSyncDownloadedChapter", "{ alias: '$alias', chapter: { name: '$chapter', itemsCount: ${images.length} } }");
+                await General.downloadImage(preUrl + url, "$chapterPath/$idx");
+              }
+            }).then((void _) {
+              downloadedCount++;
+              _jsRun("appSyncDownloadedChapter", "{ alias: '$alias', chapter: { name: '$chapter', itemsCount: ${images.length} } }");
+            });
           }
         },
       )
       ..addJavaScriptChannel(
         'flDownloadChapter',
         onMessageReceived: (JavaScriptMessage data) async {
-          if (!_isNotificationsWorking) {
-            _requestNotificationPolicyAccess();
-            return;
-          }
+          _isNotificationsWorking = await _requestNotificationPolicyAccess();
+          if (!_isNotificationsWorking) return;
 
           var payload = data.message.split(";");
           var [alias, name, image, chapter] = payload[0].split("|");
@@ -278,10 +298,13 @@ class _MyWebViewState extends State<ChildWidget> {
 
           String title = "$name - $chapter";
           String description = "Downloading $imagesLen images";
+          String descriptionDone = "All $imagesLen images downloaded";
           int downloadedCount = 0;
 
-          _sendProgressNotification(title, description, imagesLen, () {
+          _sendProgressNotification(title, description, descriptionDone, imagesLen, () {
             return downloadedCount;
+          }).then((_) {
+            _jsRun("appDownloadComplete", "");
           });
 
           for (var i=0; i < imagesLen; i++) {
@@ -425,9 +448,9 @@ class _MyWebViewState extends State<ChildWidget> {
     //   selectedNotificationPayload = notificationAppLaunchDetails!.notificationResponse?.payload;
     // }
 
-    _isNotificationsWorking = notificationAppLaunchDetails?.didNotificationLaunchApp ?? false;
+    _isNotificationsWorking = (notificationAppLaunchDetails?.didNotificationLaunchApp ?? false) != false;
   }
-  Future<void> _requestNotificationPolicyAccess() async {
+  Future<bool> _requestNotificationPolicyAccess() async {
     final AndroidFlutterLocalNotificationsPlugin? androidImplementation =
         flutterLocalNotificationsPlugin
             .resolvePlatformSpecificImplementation<
@@ -439,14 +462,17 @@ class _MyWebViewState extends State<ChildWidget> {
 
     if (grantedNotificationPermission ?? false) {
       _isNotificationsWorking = true;
+      return true;
     }
+
+    return false;
   }
 
-  Future<void> _sendProgressNotification(String title, String description, int total, int Function() getProgress) async {
+  Future<void> _sendProgressNotification(String title, String description, String descriptionDone, int total, int Function() getProgress) async {
     notificationId++;
     final int progressId = notificationId;
 
-    while (getProgress() < total) {
+    Future <void> call(title, description) async {
       await Future<void>.delayed(const Duration(seconds: 1), () async {
         final AndroidNotificationDetails androidNotificationDetails =
           AndroidNotificationDetails(
@@ -473,6 +499,12 @@ class _MyWebViewState extends State<ChildWidget> {
         );
       });
     }
+
+    while (getProgress() < total) {
+      await call(title, description);
+    }
+
+    await call(title, descriptionDone);
   }
 
   Future<void> syncTemplate() async {
@@ -492,6 +524,12 @@ class _MyWebViewState extends State<ChildWidget> {
 
   Future<void> _insertMangaList() async {
     await Manga.runScriptForMangaList(_jsRun);
+  }
+  Future<void> _syncLastReadManga() async {
+    String? alias = await Manga.getLastReadManga();
+    if (alias != null) {
+      _jsRun("appSetLastReadManga", "'$alias'");
+    }
   }
 
   void _jsRun(String fn, String attrs) {

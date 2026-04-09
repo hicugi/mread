@@ -1,26 +1,37 @@
 <script src="./Home.js"></script>
 
 <template>
-  <section v-if="onTop" class="p-home-top">
+  <section v-if="onTop" class="p-home-top" :key="`${onTop.alias}-${savedChapters[onTop?.alias]}`">
     <div
       class="p-home-top__bg"
-      :style="{ backgroundImage: 'url(' + onTop.image + ')' }"
+      :style="{ backgroundImage: 'url(\'' + onTop.image + '\')' }"
     />
 
     <div class="container">
-      <div class="p-home-top__hint">BESTONE</div>
+      <div class="p-home-top__tags">
+        <span>{{ onTop.currentChapter ? 'LAST READ' : 'BESTONE' }}</span>
+      </div>
+
       <h2>{{ onTop.name }}</h2>
 
-      <UiButton
-        class="p-home-top__btn"
-        :link="{ name: 'details', params: { alias: onTop.alias } }"
-        variant="primary"
-        size="large"
-        >
-        <img :src="iconRead" width="22px" />
-        <span>Read Now</span>
-      </UiButton
-      >
+      <div class="p-home-top__footer">
+        <UiButton
+          :link="{ name: 'details', params: { alias: onTop.alias } }"
+          variant="primary"
+          size="large"
+          >
+          <img :src="iconRead" width="22px" />
+          <span>Open Details</span>
+        </UiButton>
+        <UiButton
+          v-if="savedChapters[onTop.alias]"
+          :link="{ name: 'chapter', params: { alias: onTop.alias, chapter: savedChapters[onTop.alias] } }"
+          size="large"
+          >
+          <span>Ch. {{ savedChapters[onTop.alias] }}</span>
+          <img :src="iconContinue" width="20px" />
+        </UiButton>
+      </div>
     </div>
   </section>
 
@@ -30,7 +41,7 @@
     <div class="p-home-items">
       <Card
         v-for="(item, index) of combinedList"
-        :key="`online${item.alias}`"
+        :key="`${item?.alias}-${index}`"
         v-bind="item"
       />
     </div>
@@ -80,7 +91,11 @@
   content: "";
 }
 
-.p-home-top__hint {
+.p-home-top__tags {
+  display: flex;
+  gap: 12px;
+}
+.p-home-top__tags span {
   padding: 0 8px;
   display: inline-block;
   border-radius: 6px;
@@ -89,14 +104,19 @@
   font-size: 10px;
   line-height: 23px;
 }
+
 .p-home-top h2 {
   margin: 16px 0 40px;
   font-size: 48px;
   line-height: 1;
 }
 
-.p-home-top__btn {
-  width: 100%;
+.p-home-top__footer {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 12px;
+}
+.p-home-top__footer a {
   gap: 8px;
 }
 

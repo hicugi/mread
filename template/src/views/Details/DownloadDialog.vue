@@ -1,35 +1,49 @@
 <script setup>
 import { inject, computed, defineEmits, watch, onBeforeUnmount } from "vue";
+import { useRoute } from "vue-router";
 
 import UiButton from "../../components/ui/Button.vue";
 import { getImgUrl, fetchImages } from "../../helper/main.js";
+import { useManga } from "../../helper/useManga.js";
 
 import iconDownloadAll from "./iconDownloadAll.svg";
 
+const route = useRoute();
 const store = inject("store");
 const { active } = defineProps(["active"]);
+const { chaptersAll } = useManga(route.params.alias);
 
 watch(() => active, (newValue) => {
   document.body.style.overflowY = newValue ? "hidden" : "";
 });
 
 const className = computed(() => ["p-detailsDownloadDialog", active && "p-detailsDownloadDialog--active"]);
-const chapters = computed(() => store.getState().chapters ?? []);
+const chapters = computed(() => chaptersAll.value ?? []);
+const isDonwloading = computed(() => store.getState().isDownloadInProgress);
 
 const $emit = defineEmits(["close"]);
 
 async function handleSelectAll() {
-  const { chapters, mangaInfo } = store.getState();
+  if (isDonwloading.value) return;
+
+  const { mangaInfo } = store.getState();
   const { alias, name, image } = mangaInfo;
 
   let payload = [alias, name, image, getImgUrl("")].join("|");
 
-  for (const chapter of chapters) {
+  for (const chapter of chapters.value) {
+    if (chapter.isDownloaded) continue;
+
     const data = await fetchImages(alias, chapter.name);
     payload += ";" + chapter.name + "|" + data.join("|");
   }
 
   flDownloadChapters.postMessage(payload);
+
+  store.setState((prev) => ({
+    ...prev,
+    isDownloadInProgress: true,
+  }));
 }
 function handleClose() {
   $emit("close");
@@ -61,7 +75,7 @@ onBeforeUnmount(() => {
             <p>{{ chapters.length }} Chapters</p>
           </header>
 
-          <UiButton variant="primary" size="large" @click="handleSelectAll">
+          <UiButton variant="primary" size="large" :disabled="isDonwloading" @click="handleSelectAll">
             <img :src="iconDownloadAll" width="20px" />
             <span>Download All</span>
           </UiButton>
