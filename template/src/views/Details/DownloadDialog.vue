@@ -29,7 +29,13 @@ async function handleSelectAll() {
   const { mangaInfo } = store.getState();
   const { alias, name, image } = mangaInfo;
 
-  let payload = [alias, name, image, getImgUrl("")].join("|");
+  const payloadInfo = [alias, name, getImgUrl("")];
+
+  if (!mangaInfo.isLocal) {
+    payloadInfo.push(image);
+  }
+
+  let payload = payloadInfo.join("|");
 
   for (const chapter of chapters.value) {
     if (chapter.isDownloaded) continue;

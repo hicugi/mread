@@ -51,7 +51,8 @@ export const useManga = (alias) => {
       mangaInfo: {
         ...prev.mangaInfo,
         ...payload,
-        chaptersOnDevice: chapters,
+        isLocal: true,
+        chaptersOnDevice: chapters.reverse(),
       },
     }));
   };
