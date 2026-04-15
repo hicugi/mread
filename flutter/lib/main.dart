@@ -196,7 +196,7 @@ class _MyWebViewState extends State<ChildWidget> {
           onMessageReceived: (JavaScriptMessage data) async {
         var [alias, name, url] = data.message.split("|");
         await Manga.downloadMangaInfo(alias, name, url);
-        _insertMangaList();
+        await Manga.runScriptInsertingManga(alias, _jsRun);
       })
 
       // select manga
@@ -223,13 +223,24 @@ class _MyWebViewState extends State<ChildWidget> {
       ..addJavaScriptChannel(
         'flDownloadChapters',
         onMessageReceived: (JavaScriptMessage data) async {
-          _isNotificationsWorking = await _requestNotificationPolicyAccess();
-          if (!_isNotificationsWorking) return;
+          await _requestNotificationPolicyAccess();
+          if (!_isNotificationsWorking) {
+            _jsRun("appDownloadComplete", "");
+            return;
+          }
 
           var payload = data.message.split(";");
-          var [alias, name, image, preUrl] = payload[0].split("|");
+          var payloadInfo = payload[0].split("|");
 
-          await Manga.downloadMangaInfo(alias, name, preUrl + image);
+          General.innerDebug("flDownloadChapters starting downloading ${payload[0]} ${payloadInfo[2]}");
+
+          String alias = payloadInfo[0];
+          String name = payloadInfo[1];
+          String preUrl = payloadInfo[2];
+
+          if (payloadInfo.length > 3) {
+            await Manga.downloadMangaInfo(alias, name, preUrl + payloadInfo[3]);
+          }
 
           var chapters = payload.sublist(1);
           var chaptersLen = chapters.length;
@@ -277,7 +288,7 @@ class _MyWebViewState extends State<ChildWidget> {
       ..addJavaScriptChannel(
         'flDownloadChapter',
         onMessageReceived: (JavaScriptMessage data) async {
-          _isNotificationsWorking = await _requestNotificationPolicyAccess();
+          await _requestNotificationPolicyAccess();
           if (!_isNotificationsWorking) return;
 
           var payload = data.message.split(";");

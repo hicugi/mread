@@ -147,12 +147,15 @@ class Manga {
 
       mangaDir.listSync().forEach((manga) async {
         String alias = manga.path.split("/").last;
-        var info = await getMangaInfo(alias);
-
-        if (info == null) return;
-
-        jsRun("appInsertManga", "{ alias: '$alias', name: '" + info['name'] + "', currentChapter: '" + info['currentChapter'] + "', image: `" + info['image'] + "` }");
+        runScriptInsertingManga(alias, jsRun);
       });
+  }
+  static runScriptInsertingManga(String alias, void Function(String, String) jsRun) async {
+      var info = await getMangaInfo(alias);
+
+      if (info == null) return;
+
+      jsRun("appInsertManga", "{ alias: '$alias', name: '" + info['name'] + "', currentChapter: '" + info['currentChapter'] + "', image: `" + info['image'] + "` }");
   }
 
   static runScriptForInsertingImgs(String alias, String chapter, callback) async {
