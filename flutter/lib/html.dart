@@ -67,24 +67,6 @@ class MyHtml {
     return fileHtml.readAsStringSync();
   }
 
-  static Future<bool> downloadHtml(String url) async {
-    General.innerDebug("[downloadHtml] downloading html from $url");
-
-    try {
-      final response = await http.get(Uri.parse(url));
-
-      File htmlFile = await getHtmlFile();
-      await htmlFile.writeAsString(response.body);
-
-      General.innerDebug("[downloadHtml] got template ${response.statusCode}");
-    } catch(error) {
-      await htmlForSettingHost();
-      General.innerDebug("Error: $error");
-    }
-
-    return true;
-  }
-
   static Future<void> htmlForSettingHost() async {
     try {
       File file = await getHtmlFile();
@@ -129,11 +111,23 @@ class MyHtml {
 
   static Future<void> syncHtmlTemplate() async {
     General.innerDebug("[syncHtmlTemplate] getting template from $hostUrl");
+    String url = hostUrl;
+    File htmlFile = await getHtmlFile();
+
+    if (!htmlFile.existsSync()) {
+      General.innerDebug("[syncHtmlTemplate] couldn't download, settingup host form");
+      await htmlForSettingHost();
+      return;
+    }
 
     try {
-      await downloadHtml(hostUrl);
+      final response = await http.get(Uri.parse(url));
+
+      await htmlFile.writeAsString(response.body);
+
+      General.innerDebug("[syncHtmlTemplate] got template ${response.statusCode}");
     } catch(error) {
-      General.innerDebug("[syncHtmlTemplate] E Couldn't download from, settingup host form");
+      General.innerDebug("[syncHtmlTemplate] couldn't download, settingup host form");
       await htmlForSettingHost();
     }
   }

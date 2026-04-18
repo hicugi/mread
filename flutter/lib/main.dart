@@ -138,9 +138,7 @@ class _MyWebViewState extends State<ChildWidget> {
       ..addJavaScriptChannel(
         'Toaster',
         onMessageReceived: (JavaScriptMessage message) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(message.message)),
-          );
+          _barMessage(message.message);
         },
       )
 
@@ -388,7 +386,7 @@ class _MyWebViewState extends State<ChildWidget> {
 
   Future<void> _setupNotifications() async {
     const AndroidInitializationSettings initializationSettingsAndroid =
-      AndroidInitializationSettings('notif_download');
+      AndroidInitializationSettings('@mipmap/app_icon');
 
     // final List<DarwinNotificationCategory> darwinNotificationCategories =
     //     <DarwinNotificationCategory>[
@@ -518,19 +516,32 @@ class _MyWebViewState extends State<ChildWidget> {
     await call(title, descriptionDone);
   }
 
+  _barMessage(String msg) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(msg)),
+    );
+  }
+
   Future<void> syncTemplate() async {
     await MyHtml.syncHtmlTemplate();
     host = await MyHtml.getHost();
   }
 
   Future<void> _renderHtml(controller) async {
-    await _setupNotifications();
+    await Future.delayed(const Duration(seconds: 1));
+
+    try {
+      await _setupNotifications();
+    } catch (error) {
+      _barMessage("Setup notifications error: $error");
+    }
+
     String content = await MyHtml.getHtml(host);
     final String htmlBase64 = base64Encode(
       const Utf8Encoder().convert(content),
     );
-    controller.loadRequest(Uri.parse("data:text/html;base64,$htmlBase64"));
 
+    controller.loadRequest(Uri.parse("data:text/html;base64,$htmlBase64"));
   }
 
   Future<void> _insertMangaList() async {

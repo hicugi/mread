@@ -1,7 +1,6 @@
 <script setup>
 import { ref, onMounted } from "vue";
 
-import CurrentHost from "../component/CurrentHost.vue";
 import NewManga from "../component/NewManga.vue";
 import MangaList from "../component/MangaList.vue";
 
@@ -27,9 +26,6 @@ onMounted(() => {
 
 <template>
   <div>
-    <h1>This is home</h1>
-
-    <CurrentHost @change="handleChange" />
     <NewManga @success="fetchList" />
 
     <template v-if="list.length">
