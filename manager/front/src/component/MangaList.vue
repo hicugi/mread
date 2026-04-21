@@ -23,31 +23,46 @@ function handleRemove(item) {
 </script>
 
 <template>
-  <h2>Current list</h2>
-
-  <div class="c-mangaList__items">
+  <div class="c-mangaList">
     <template v-for="(item, i) in items" :key="i">
-      <div>
-        <h3>{{ item.name }}</h3>
-
+      <div class="c-mangaList__item">
         <RouterLink :to="{ name: 'manga', params: { name: item.alias } }">
           <div class="c-mangaList__image" :style="getBgImage(item)" />
         </RouterLink>
 
-        <UiButton type="button" @click="handleRemove(item)">remove</UiButton>
+        <h3>{{ item.name }}</h3>
+
+        <!-- <UiButton type="button" @click="handleRemove(item)">remove</UiButton> -->
       </div>
     </template>
   </div>
 </template>
 
 <style>
-.c-mangaList__items {
+.c-mangaList {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  row-gap: 20px;
 }
 .c-mangaList__image {
   background: no-repeat center #dcdcdc;
   background-size: cover;
   aspect-ratio: 9/12;
+}
+
+.c-mangaList__item {
+  position: relative;
+  padding-bottom: 50px;
+}
+
+.c-mangaList__item h3 {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 </style>
