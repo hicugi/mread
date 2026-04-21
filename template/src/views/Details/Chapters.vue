@@ -55,6 +55,11 @@ async function handleDownload(chapter) {
 
   flDownloadChapter.postMessage(payload);
 }
+function handleRemove(chapter) {
+  if (confirm("Remove manga?")) {
+    flRemoveManga.postMessage(alias.value);
+  }
+}
 function handleShowMore() {
   showAll.value = !showAll.value;
 }

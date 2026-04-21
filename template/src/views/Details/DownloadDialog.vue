@@ -26,30 +26,24 @@ const $emit = defineEmits(["close"]);
 async function handleSelectAll() {
   if (isDonwloading.value) return;
 
+  store.setState((prev) => ({
+    ...prev,
+    isDownloadInProgress: true,
+  }));
+
   const { mangaInfo } = store.getState();
   const { alias, name, image } = mangaInfo;
 
-  const payloadInfo = [alias, name, getImgUrl("")];
+  const send = (arr) => flDownloadChapters.postMessage(arr.join("|"));
 
-  if (!mangaInfo.isLocal) {
-    payloadInfo.push(image);
-  }
-
-  let payload = payloadInfo.join("|");
+  send(["init", alias, name, chapters.value.length, getImgUrl(""), image]);
 
   for (const chapter of chapters.value) {
     if (chapter.isDownloaded) continue;
 
     const data = await fetchImages(alias, chapter.name);
-    payload += ";" + chapter.name + "|" + data.join("|");
+    send(["chapter", alias, chapter.name, ...data.map((v) => v.substring(v.indexOf(alias) + alias.length + 1))]);
   }
-
-  flDownloadChapters.postMessage(payload);
-
-  store.setState((prev) => ({
-    ...prev,
-    isDownloadInProgress: true,
-  }));
 }
 function handleClose() {
   $emit("close");

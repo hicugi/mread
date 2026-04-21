@@ -135,7 +135,10 @@ class Manga {
       File nameFile = File("${manga.path}/$MANGA_INFO");
       nameFile.writeAsStringSync(name);
 
-      await General.downloadImage(url, "${manga.path}/$MANGA_COVER");
+      File imageFile = File("${manga.path}/$MANGA_COVER");
+      if (!imageFile.existsSync()) {
+        await General.downloadImage(url, "${manga.path}/$MANGA_COVER");
+      }
   }
 
   static runScriptForMangaList(void Function(String, String) jsRun) async {

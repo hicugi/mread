@@ -84,7 +84,10 @@ class General {
       }
 
       file.writeAsBytes(response.bodyBytes);
-      innerDebug("Downloaded image: $filePath ${response.bodyBytes.length}");
+
+      String key = "app_flutter";
+      String logPath = filePath.substring(filePath.indexOf(key) + key.length + 1);
+      innerDebug("Downloaded image: $logPath ${response.bodyBytes.length} from $url");
     });
 
     return true;
