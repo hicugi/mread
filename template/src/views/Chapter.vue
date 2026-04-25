@@ -5,7 +5,7 @@ import { useRoute, useRouter } from "vue-router";
 import MangaHeader from "../components/manga/header.vue";
 import ChapterControls from "../components/manga/chapter/controls.vue";
 import ChapterImage from "../components/manga/chapter/images.vue";
-import { isApp, fetchImages, fetchChapters, getImgUrl } from "../helper/main.js";
+import { isApp, fetchChapters, getImgUrl } from "../helper/main.js";
 import { useManga } from "../helper/useManga.js";
 
 const route = useRoute();
@@ -13,6 +13,7 @@ const router = useRouter();
 const store = inject("store");
 
 const myElm = useTemplateRef("myElm");
+const elmImages = useTemplateRef("elmImages");
 
 const images = ref([]);
 
@@ -22,7 +23,6 @@ const { chaptersAll } = useManga(alias.value);
 const info = computed(() => store.getState().mangaInfo);
 const name = computed(() => info.value.name ?? "");
 const chapter = computed(() => route.params.chapter ?? "");
-const formattedImages = computed(() => images.value.map(getImgUrl));
 
 window.appInsertImage = (plAlias, plChapter, imageBase64) => {
   if (alias?.value !== plAlias || chapter?.value !== plChapter) return;
@@ -57,13 +57,32 @@ const loadImages = async () => {
       return;
     }
 
-    fetchImages(alias, chapter).then((data) => {
-      images.value = data;
-    });
+    const { itemsCount } = chaptersAll.value?.find((item) => item.name == chapter) ?? {};
+    images.value = Array.from({ length: (itemsCount ?? 0) }, (_, i) => getImgUrl(`manga/Sword-king/${chapter}/${i}`));
   }, 100);
 }
 
 watch(chapter, loadImages);
+watch(images, async (items) => {
+  window.scrollTo(0,0);
+  const elm = elmImages.value;
+
+  const currentChapter = chapter.value;
+  const { itemsCount } = chaptersAll.value?.find((item) => item.name == chapter) ?? {};
+
+  for (let i=0; i < items.length; i++) {
+    if (!elm) return;
+    if (currentChapter !== chapter.value) return;
+
+    const img = document.createElement("IMG");
+    img.src = items[i];
+    img.loading = "lazy";
+
+    elm.appendChild(img);
+    await new Promise((ok) => setTimeout(ok, 500));
+  }
+});
+
 onMounted(() => {
   loadImages();
 
@@ -97,13 +116,7 @@ onMounted(() => {
     :items="chaptersAll"
   />
 
-  <div class="p-chapter__images">
-    <img v-for="(image, i) of formattedImages" :key="i" :src="image" />
-  </div>
-
-  <footer class="p-chater__footer">
-    <RouterLink :to="['details', { alias }]">Back</RouterLink>
-  </footer>
+  <div class="p-chapter__images" ref="elmImages" :key="chapter" />
 </template>
 
 <style>

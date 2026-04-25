@@ -39,7 +39,7 @@ export const getChapters = async (req, res) => {
 
     result.push({
       name,
-      itemsCount: items.length,
+      itemsCount: items.filter((v) => v[0] != ".").length,
     });
   }
 
