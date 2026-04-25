@@ -3,13 +3,18 @@ import { inject, ref, onBeforeMount, onMounted } from "vue";
 import Cover from "../../components/Cover.vue";
 import Card from "./Card.vue";
 import UiButton from "../../components/ui/Button.vue";
+import SidebarMenu from "../../components/SidebarMenu.vue";
 
 import { isApp, HOST_URL_KEY } from "../../helper/main.js";
 import { lastReadManga, savedChapters } from "../../helper/global.js";
 import { api } from "../../api.js";
 
+import iconCog from "../iconCog.svg";
 import iconRead from "./iconRead.svg";
 import iconContinue from "./iconContinue.svg";
+import iconRefresh from "./iconRefresh.svg";
+import iconDownload from "./iconDownload.svg";
+import iconRemove from "./iconRemove.svg";
 
 const list = ref([]);
 const listOnDevice = ref([]);
@@ -19,18 +24,42 @@ export default {
     Cover,
     Card,
     UiButton,
+    SidebarMenu,
   },
 
   data: () => ({
+    iconCog,
     iconRead,
     iconContinue,
 
     savedChapters,
     list,
     listOnDevice,
+
+    configDialogActive: false,
   }),
 
   computed: {
+    configList() {
+      return [
+        {
+          label: "Reload page",
+          icon: iconRefresh,
+          event: this.reload,
+        },
+        {
+          label: "Update template",
+          icon: iconDownload,
+          event: this.clearTemplate,
+        },
+        {
+          label: "Purge local data",
+          icon: iconRemove,
+          event: this.clearAll,
+        },
+      ];
+    },
+
     combinedList() {
       const online = this.list;
       const local = this.listOnDevice;
@@ -64,18 +93,27 @@ export default {
   },
 
   methods: {
+    reload() {
+      flReload.postMessage("");
+    },
+
     clearTemplate() {
       if (confirm("Clear template?")) {
         flClearCache.postMessage("");
-        return;
       }
     },
 
     clearAll() {
       if (confirm("Remove & Clear everything?")) {
         flRemoveAll.postMessage("");
-        return;
       }
+    },
+
+    openConfigDialog() {
+      this.configDialogActive = true;
+    },
+    closeConfigDialog() {
+      this.configDialogActive = false;
     },
   },
 

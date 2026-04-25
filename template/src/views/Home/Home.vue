@@ -2,8 +2,15 @@
 
 <template>
   <Cover v-if="onTop" class="p-home-top" :image="onTop.image">
+    <template v-slot:header>
+      <span />
+      <UiButton size="large" @click="openConfigDialog">
+        <img :src="iconCog" width="20px" />
+      </UiButton>
+    </template>
+
     <div class="p-home-top__tags">
-      <span>{{ onTop.currentChapter ? 'LAST READ' : 'BESTONE' }}</span>
+      <span>{{ onTop.currentChapter ? "LAST READ" : "BESTONE" }}</span>
     </div>
 
     <h2>{{ onTop.name }}</h2>
@@ -13,15 +20,18 @@
         :link="{ name: 'details', params: { alias: onTop.alias } }"
         variant="primary"
         size="large"
-        >
+      >
         <img :src="iconRead" width="22px" />
         <span>Open Details</span>
       </UiButton>
       <UiButton
         v-if="savedChapters[onTop.alias]"
-        :link="{ name: 'chapter', params: { alias: onTop.alias, chapter: savedChapters[onTop.alias] } }"
+        :link="{
+          name: 'chapter',
+          params: { alias: onTop.alias, chapter: savedChapters[onTop.alias] },
+        }"
         size="large"
-        >
+      >
         <span>Ch. {{ savedChapters[onTop.alias] }}</span>
         <img :src="iconContinue" width="20px" />
       </UiButton>
@@ -39,10 +49,12 @@
       />
     </div>
 
-    <footer class="c-mangaList__footer">
-      <UiButton type="button" @click="clearTemplate">update template</UiButton>
-      <UiButton variant="danger" @click="clearAll">clear all cache</UiButton>
-    </footer>
+    <SidebarMenu
+      title="App config"
+      :active="configDialogActive"
+      :list="configList"
+      @close="closeConfigDialog"
+    />
   </section>
 </template>
 
@@ -76,6 +88,9 @@
   gap: 8px;
 }
 
+.p-home__list {
+  padding-bottom: 40px;
+}
 .p-home__list h2 {
   margin: 40px 0 24px;
   font-size: 24px;

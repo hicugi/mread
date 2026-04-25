@@ -7,7 +7,7 @@ const { variant, size } = defineProps({
   },
   variant: {
     default: "default",
-    variants: ["default", "primary"],
+    variants: ["default", "primary", "icon"],
   },
   size: {
     default: "medium",
@@ -60,6 +60,10 @@ const className = computed(() => [
 .ui-button_variant-default {
   background: #262626;
   color: #ADAAAA;
+}
+.ui-button_variant-icon {
+  background: transparent;
+  color: var(--color-primary);
 }
 
 .ui-button_variant-danger {
