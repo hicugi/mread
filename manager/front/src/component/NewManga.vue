@@ -72,8 +72,4 @@ function handleSubmit() {
 .c-newManga {
   padding: 30px 0
 }
-
-.c-newManga .ui-input:nth-child(3) input {
-  filter: blur(5px);
-}
 </style>
