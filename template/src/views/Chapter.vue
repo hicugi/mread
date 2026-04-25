@@ -24,8 +24,11 @@ const chapter = computed(() => route.params.chapter ?? "");
 
 const insertImage = (src) => {
   const elm = elmImages.value;
+  if (!elm) return;
+
   const img = document.createElement("IMG");
   img.src = src;
+  img.alt = src;
   img.loading = "lazy";
 
   elm.appendChild(img);
@@ -66,14 +69,13 @@ const loadImages = async () => {
 
     const elm = elmImages.value;
     const { itemsCount } = chaptersAll.value?.find((item) => item.name == chapter) ?? {};
-    const items = Array.from({ length: (itemsCount ?? 0) }, (_, i) => getImgUrl(`manga/Sword-king/${chapter}/${i}`));
-    const currentChapter = chapter.value;
+    const currentChapter = chapter;
 
-    for (let i=0; i < items.length; i++) {
+    for (let i=0; i < itemsCount; i++) {
       if (!elm) return;
-      if (currentChapter !== chapter.value) return;
+      if (currentChapter !== chapter) return;
 
-      insertImage(items[i]);
+      insertImage(getImgUrl(`manga/${alias}/${chapter}/${i}`));
       await new Promise((ok) => setTimeout(ok, 500));
     }
   }, 300);
