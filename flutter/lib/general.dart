@@ -46,6 +46,12 @@ class General {
 
     return await file.readAsString();
   }
+  static Future writeFile(String path, String content) async {
+    Directory local = await getLocaleDir();
+    File file = await File("${local.path}/$path");
+
+    await file.writeAsString(content);
+  }
 
   static Iterable getDirSortedItems(dirItems) {
     Iterable result = dirItems.map((v) {

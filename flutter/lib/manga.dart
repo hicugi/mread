@@ -1,14 +1,16 @@
 import 'dart:io';
 import './general.dart';
 
+const String MANGA_DIR = "manga";
 const String MANGA_INFO = "-meta";
 const String MANGA_COVER = "-cover.jpg";
 const String MANGA_SAVE = "-save";
+const String MANGA_INFO_CACHE = "-cache";
 
 class Manga {
   static Future<Directory> getMangaDir() async {
     Directory main = await General.getLocaleDir();
-    var result = Directory("${main.path}/manga");
+    var result = Directory("${main.path}/$MANGA_DIR");
 
     var isExist = await result.exists();
     if (!isExist) {
@@ -154,11 +156,22 @@ class Manga {
       });
   }
   static runScriptInsertingManga(String alias, void Function(String, String) jsRun) async {
+      String cacheFilePath = "$MANGA_DIR/$alias/$MANGA_INFO_CACHE";
+
+      var cacheContent = await General.readFile(cacheFilePath);
+      if (cacheContent is String) {
+        jsRun("appInsertManga", cacheContent);
+        return;
+      }
+
       var info = await getMangaInfo(alias);
 
       if (info == null) return;
 
-      jsRun("appInsertManga", "{ alias: '$alias', name: '" + info['name'] + "', currentChapter: '" + info['currentChapter'] + "', image: `" + info['image'] + "` }");
+      String content = "{ alias: '$alias', name: '" + info['name'] + "', currentChapter: '" + info['currentChapter'] + "', image: `" + info['image'] + "` }";
+
+      General.writeFile(cacheFilePath, content);
+      jsRun("appInsertManga", content);
   }
 
   static runScriptForInsertingImgs(String alias, String chapter, callback) async {
