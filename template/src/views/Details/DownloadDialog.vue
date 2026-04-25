@@ -34,16 +34,10 @@ async function handleSelectAll() {
   const { mangaInfo } = store.getState();
   const { alias, name, image } = mangaInfo;
 
-  const send = (arr) => flDownloadChapters.postMessage(arr.join("|"));
+  const payload = [alias, name, getImgUrl(""), image];
+  payload.push(chapters.value.map((c) => `${c.name}=${c.itemsCount}`).join(";"))
 
-  send(["init", alias, name, chapters.value.length, getImgUrl(""), image]);
-
-  for (const chapter of chapters.value) {
-    if (chapter.isDownloaded) continue;
-
-    const data = await fetchImages(alias, chapter.name);
-    send(["chapter", alias, chapter.name, ...data.map((v) => v.substring(v.indexOf(alias) + alias.length + 1))]);
-  }
+  flDownloadChapters.postMessage(payload.join("|"));
 }
 function handleClose() {
   $emit("close");

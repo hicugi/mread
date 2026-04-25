@@ -117,10 +117,6 @@ class _MyWebViewState extends State<ChildWidget> {
 
   String htmlContent = "";
 
-  String downloadChaptersUrl = "";
-  int downloadChaptersCountIdx = 3;
-  List<List<dynamic>> downloadChaptersList = [];
-
   @override
   void initState() {
     super.initState();
@@ -224,41 +220,7 @@ class _MyWebViewState extends State<ChildWidget> {
       ..addJavaScriptChannel(
         'flDownloadChapters',
         onMessageReceived: (JavaScriptMessage data) async {
-          var list = data.message.split("|");
-
-          if (list[0] == "chapter") {
-            List<dynamic> info = downloadChaptersList.firstWhere((elm) => elm[0] == list[1]);
-
-            String preUrl = downloadChaptersUrl;
-            var [alias, name, chaptersLen, _] = info;
-            String chapter = list[2];
-
-            List<String> images = list.sublist(3);
-
-            Directory mangaDir = await Manga.getMangaDir();
-
-            String chapterPath = "${mangaDir.path}/$alias/$chapter";
-            Directory chapterDir = Directory(chapterPath);
-
-            if (!chapterDir.existsSync()) {
-              chapterDir.createSync(recursive: true);
-            }
-
-            Future<void>.delayed(const Duration(milliseconds: 100), () async {
-              for (var i=0; i < images.length; i++) {
-                int idx = i + 1;
-                String url = images[i];
-
-                await General.downloadImage("${preUrl}manga/$alias/$url", "$chapterPath/$idx");
-              }
-            }).then((void _) {
-              info[downloadChaptersCountIdx]++;
-              _jsRun("appSyncDownloadedChapter", "{ alias: '$alias', chapter: { name: '$chapter', itemsCount: ${images.length} } }");
-            });
-            return;
-          }
-
-          if (_isNotificationsWorking) {
+          if (!_isNotificationsWorking) {
             await _requestNotificationPolicyAccess();
 
             if (!_isNotificationsWorking) {
@@ -267,10 +229,12 @@ class _MyWebViewState extends State<ChildWidget> {
             }
           }
 
-          var [_, alias, name, chaptersCount, preUrl, image] = list;
-          int chaptersLen = int.parse(chaptersCount);
-          downloadChaptersUrl = preUrl;
-          downloadChaptersList.add([alias, name, chaptersLen, 0]);
+          var list = data.message.split("|");
+          var [alias, name, preUrl, image, strChapters] = list;
+          List<String> chapters = strChapters.split(";");
+
+          int downloadedCount = 0;
+          int chaptersLen = chapters.length;
 
           General.innerDebug("FL.flDownloadChapters: starting downloading $alias $name $preUrl");
 
@@ -278,15 +242,24 @@ class _MyWebViewState extends State<ChildWidget> {
           String description = "Downloading $chaptersLen chapters";
           String descriptionDone = "All $chaptersLen chapters downloaded";
 
-          _sendProgressNotification(title, description, descriptionDone, chaptersLen as int, () {
-            List<dynamic> info = downloadChaptersList.firstWhere((elm) => elm[0] == list[1]);
-            return info[downloadChaptersCountIdx];
+          _sendProgressNotification(title, description, descriptionDone, chaptersLen, () {
+            return downloadedCount;
           }).then((_) {
             _jsRun("appDownloadComplete", "");
           });
 
           await Manga.downloadMangaInfo(alias, name, preUrl + image);
-          return;
+
+          for (var i=0; i < chapters.length; i++) {
+            var [chapter, count] = chapters[i].split("=");
+
+            Future<void>.delayed(const Duration(milliseconds: 100), () async {
+              await Manga.insertChapter(alias, chapter, preUrl, int.parse(count));
+            }).then((void _) {
+              downloadedCount++;
+              _jsRun("appSyncDownloadedChapter", "{ alias: '$alias', chapter: { name: '$chapter', itemsCount: $count } }");
+            });
+          }
         },
       )
       ..addJavaScriptChannel(

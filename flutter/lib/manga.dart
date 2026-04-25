@@ -187,6 +187,15 @@ class Manga {
       jsRun("appInsertManga", content);
   }
 
+  static insertChapter(String alias, String chapter, String url, int imagesCount) async {
+      Directory dir = await General.createDir("$MANGA_DIR/$alias/$chapter");
+
+      for (var i=0; i < imagesCount; i++) {
+        int idx = i + 1;
+        await General.downloadImage("${url}manga/$alias/$chapter/$i", "${dir.path}/$idx");
+      }
+  }
+
   static runScriptForInsertingImgs(String alias, String chapter, callback) async {
     Directory mangaDir = await Manga.getMangaDir();
     Directory chapterDir = Directory("${mangaDir.path}/$alias/$chapter");

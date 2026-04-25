@@ -32,6 +32,16 @@ class General {
     Directory main = await getApplicationDocumentsDirectory();
     return main;
   }
+  static Future<Directory> createDir(String path) async {
+    Directory local = await getLocaleDir();
+    Directory dir = await Directory("${local.path}/$path");
+
+    if (!dir.existsSync()) {
+      dir.createSync(recursive: true);
+    }
+
+    return dir;
+  }
 
   static Future<File> getFile(String path) async {
     Directory local = await getLocaleDir();
