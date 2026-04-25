@@ -1,9 +1,10 @@
 import { inject, ref, onBeforeMount, onMounted } from "vue";
 
+import Cover from "../../components/Cover.vue";
 import Card from "./Card.vue";
 import UiButton from "../../components/ui/Button.vue";
 
-import { isApp, HOST_URL_KEY, getImgUrl } from "../../helper/main.js";
+import { isApp, HOST_URL_KEY } from "../../helper/main.js";
 import { lastReadManga, savedChapters } from "../../helper/global.js";
 import { api } from "../../api.js";
 
@@ -15,6 +16,7 @@ const listOnDevice = ref([]);
 
 export default {
   components: {
+    Cover,
     Card,
     UiButton,
   },
@@ -57,12 +59,7 @@ export default {
       const topItem = list.find((item) => item.isTop);
       const item = lastRead ?? topItem;
 
-      if (!item) return undefined;
-
-      return {
-        ...item,
-        image: getImgUrl(item.image),
-      };
+      return item;
     },
   },
 

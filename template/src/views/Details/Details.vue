@@ -2,6 +2,7 @@
 import { ref, computed, inject, useTemplateRef, onMounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
 
+import Cover from "../../components/Cover.vue";
 import MangaHeader from "../../components/manga/header.vue";
 import DetailsChapters from "./Chapters.vue";
 import ChapterControls from "../../components/manga/chapter/controls.vue";
@@ -10,7 +11,12 @@ import DownloadDialog from "./DownloadDialog.vue";
 
 import { api } from "../../api.js";
 import { savedChapters } from "../../helper/global.js";
-import { fetchImages, isApp, getImgUrl, fetchChapters } from "../../helper/main.js";
+import {
+  fetchImages,
+  isApp,
+  getImgUrl,
+  fetchChapters,
+} from "../../helper/main.js";
 import { useManga } from "../../helper/useManga.js";
 
 import iconBack from "../iconBack.svg";
@@ -53,7 +59,6 @@ const headerChapter = computed(() => {
   };
 });
 
-
 function openDownloadDialog() {
   downloadDialogActive.value = true;
 }
@@ -74,61 +79,50 @@ onMounted(() => {
 
 <template>
   <div class="p-details" ref="myElm">
-    <div v-if="alias" class="container">
-      <UiButton
-        class="p-details__back-btn"
-        :link="{ name: 'home' }"
-        size="large"
-        @click="openDownloadDialog"
-      >
-        <img :src="iconBack" width="18px" />
-      </UiButton>
-    </div>
-
-    <header
-      v-if="info?.image"
-      class="p-details-header"
-    >
-    <div 
-      class="p-details-header__bg"
-      :style="{ backgroundImage: `url('${getImgUrl(info.image)}')` }"
-      />
-      <div class="container">
-        <h1>{{ info.name }}</h1>
-
-        <div v-if="headerChapter" class="p-details-header__controls">
+    <Cover v-if="info?.image" :image="info.image">
+      <template v-slot:header>
+        <div>
           <UiButton
-            :link="{
-              name: 'chapter',
-              params: { alias, chapter: headerChapter.value },
-            }"
-            variant="primary"
+            class="p-details__back-btn"
+            :link="{ name: 'home' }"
             size="large"
-            v-text="headerChapter.label"
-          />
-          <UiButton v-if="isApp" size="large" @click="openDownloadDialog">
-            <img :src="iconDownload" width="18px" />
+          >
+            <img :src="iconBack" width="18px" />
           </UiButton>
         </div>
-      </div>
-    </header>
+      </template>
 
-    <DetailsChapters class="container" :chapters="chaptersAll" :lastReadChapter="lastReadChapter" />
-    <DownloadDialog :active="downloadDialogActive" @close="closeDownloadDialog" />
+      <h1>{{ info.name }}</h1>
+
+      <div v-if="headerChapter" class="p-details-header__controls">
+        <UiButton
+          :link="{
+            name: 'chapter',
+            params: { alias, chapter: headerChapter.value },
+          }"
+          variant="primary"
+          size="large"
+          v-text="headerChapter.label"
+        />
+        <UiButton v-if="isApp" size="large" @click="openDownloadDialog">
+          <img :src="iconDownload" width="18px" />
+        </UiButton>
+      </div>
+    </Cover>
+
+    <DetailsChapters
+      class="container"
+      :chapters="chaptersAll"
+      :lastReadChapter="lastReadChapter"
+    />
+    <DownloadDialog
+      :active="downloadDialogActive"
+      @close="closeDownloadDialog"
+    />
   </div>
 </template>
 
 <style>
-.p-details .container {
-  position: relative;
-}
-.p-details__back-btn {
-  z-index: 1;
-  position: absolute;
-  top: 24px;
-  left: 24px;
-}
-
 .p-details-header {
   z-index: 0;
   position: relative;

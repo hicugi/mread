@@ -1,39 +1,32 @@
 <script src="./Home.js"></script>
 
 <template>
-  <section v-if="onTop" class="p-home-top" :key="`${onTop.alias}-${savedChapters[onTop?.alias]}`">
-    <div
-      class="p-home-top__bg"
-      :style="{ backgroundImage: 'url(\'' + onTop.image + '\')' }"
-    />
-
-    <div class="container">
-      <div class="p-home-top__tags">
-        <span>{{ onTop.currentChapter ? 'LAST READ' : 'BESTONE' }}</span>
-      </div>
-
-      <h2>{{ onTop.name }}</h2>
-
-      <div class="p-home-top__footer">
-        <UiButton
-          :link="{ name: 'details', params: { alias: onTop.alias } }"
-          variant="primary"
-          size="large"
-          >
-          <img :src="iconRead" width="22px" />
-          <span>Open Details</span>
-        </UiButton>
-        <UiButton
-          v-if="savedChapters[onTop.alias]"
-          :link="{ name: 'chapter', params: { alias: onTop.alias, chapter: savedChapters[onTop.alias] } }"
-          size="large"
-          >
-          <span>Ch. {{ savedChapters[onTop.alias] }}</span>
-          <img :src="iconContinue" width="20px" />
-        </UiButton>
-      </div>
+  <Cover v-if="onTop" class="p-home-top" :image="onTop.image">
+    <div class="p-home-top__tags">
+      <span>{{ onTop.currentChapter ? 'LAST READ' : 'BESTONE' }}</span>
     </div>
-  </section>
+
+    <h2>{{ onTop.name }}</h2>
+
+    <div class="p-home-top__footer">
+      <UiButton
+        :link="{ name: 'details', params: { alias: onTop.alias } }"
+        variant="primary"
+        size="large"
+        >
+        <img :src="iconRead" width="22px" />
+        <span>Open Details</span>
+      </UiButton>
+      <UiButton
+        v-if="savedChapters[onTop.alias]"
+        :link="{ name: 'chapter', params: { alias: onTop.alias, chapter: savedChapters[onTop.alias] } }"
+        size="large"
+        >
+        <span>Ch. {{ savedChapters[onTop.alias] }}</span>
+        <img :src="iconContinue" width="20px" />
+      </UiButton>
+    </div>
+  </Cover>
 
   <section class="p-home__list container">
     <h2>Editor's Picks</h2>
@@ -54,43 +47,6 @@
 </template>
 
 <style>
-.p-home-top {
-  z-index: 0;
-  position: relative;
-  height: 574px;
-  display: grid;
-  grid-template-columns: 1fr;
-  align-items: flex-end;
-}
-
-.p-home-top__bg {
-  z-index: -1;
-  position: absolute;
-  left: 50%;
-  top: 0;
-  transform: translateX(-50%);
-  width: 100%;
-  max-width: 740px;
-  height: 100%;
-  background: no-repeat top;
-  background-size: 100% auto;
-}
-.p-home-top__bg::before {
-  z-index: -1;
-  position: absolute;
-  left: 0;
-  top: 0;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(
-    to bottom,
-    #0e0e0e99,
-    #0e0e0ecd 60%,
-    #0e0e0e 100%
-  );
-  content: "";
-}
-
 .p-home-top__tags {
   display: flex;
   gap: 12px;
