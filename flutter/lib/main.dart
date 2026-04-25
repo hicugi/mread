@@ -116,7 +116,6 @@ class _MyWebViewState extends State<ChildWidget> {
   bool _isNotificationsWorking = false;
 
   String htmlContent = "";
-  num flSelectMangaLastId = 0;
 
   String downloadChaptersUrl = "";
   int downloadChaptersCountIdx = 3;

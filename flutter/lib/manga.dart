@@ -6,6 +6,7 @@ const String MANGA_INFO = "-meta";
 const String MANGA_COVER = "-cover.jpg";
 const String MANGA_SAVE = "-save";
 const String MANGA_INFO_CACHE = "-cache";
+const String MANGA_DETAILS_CACHE = "-cache-details";
 
 class Manga {
   static Future<Directory> getMangaDir() async {
@@ -48,6 +49,15 @@ class Manga {
       return;
     }
 
+    String fnName = "appSyncMangaInfo";
+    String cacheFilePath = "$MANGA_DIR/$alias/$MANGA_DETAILS_CACHE";
+
+    var cacheContent = await General.readFile(cacheFilePath);
+    if (cacheContent is String) {
+      jsRun(fnName, cacheContent);
+      return;
+    }
+
     Iterable chapters = General.getDirSortedItems(info['mangaDir'].listSync().whereType<Directory>());
 
     List<String> jsData = [];
@@ -61,7 +71,10 @@ class Manga {
       jsData.add("{ name: '$chapterName', itemsCount: ${chapterInfo['count']}, isDownloaded: true }");
     }
 
-    jsRun("appSyncMangaInfo", "{ alias: '$alias', name: '" + info['name'] + "', currentChapter: '" + info['currentChapter'] + "', chapters: [ ${jsData.join(',')} ], image: '" + info['image'] + "' }");
+    String content = "{ alias: '$alias', name: '" + info['name'] + "', currentChapter: '" + info['currentChapter'] + "', chapters: [ ${jsData.join(',')} ], image: '" + info['image'] + "' }";
+
+    General.writeFile(cacheFilePath, content);
+    jsRun(fnName, content);
   }
 
   static Future<String?> getLastReadManga() async {
