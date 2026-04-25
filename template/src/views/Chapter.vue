@@ -15,8 +15,6 @@ const store = inject("store");
 const myElm = useTemplateRef("myElm");
 const elmImages = useTemplateRef("elmImages");
 
-const images = ref([]);
-
 const alias = computed(() => route.params.alias);
 const { chaptersAll } = useManga(alias.value);
 
@@ -24,9 +22,18 @@ const info = computed(() => store.getState().mangaInfo);
 const name = computed(() => info.value.name ?? "");
 const chapter = computed(() => route.params.chapter ?? "");
 
+const insertImage = (src) => {
+  const elm = elmImages.value;
+  const img = document.createElement("IMG");
+  img.src = src;
+  img.loading = "lazy";
+
+  elm.appendChild(img);
+}
+
 window.appInsertImage = (plAlias, plChapter, imageBase64) => {
   if (alias?.value !== plAlias || chapter?.value !== plChapter) return;
-  images.value.push(imageBase64);
+  insertImage(imageBase64);
 };
 
 function handleBackClick() {
@@ -34,9 +41,7 @@ function handleBackClick() {
 }
 
 const loadImages = async () => {
-  images.value = [];
-
-  setTimeout(() => {
+  setTimeout(async () => {
     const { alias, chapter } = route.params;
     let isDownloaded = false;
 
@@ -57,31 +62,24 @@ const loadImages = async () => {
       return;
     }
 
+    window.scrollTo(0,0);
+
+    const elm = elmImages.value;
     const { itemsCount } = chaptersAll.value?.find((item) => item.name == chapter) ?? {};
-    images.value = Array.from({ length: (itemsCount ?? 0) }, (_, i) => getImgUrl(`manga/Sword-king/${chapter}/${i}`));
-  }, 100);
+    const items = Array.from({ length: (itemsCount ?? 0) }, (_, i) => getImgUrl(`manga/Sword-king/${chapter}/${i}`));
+    const currentChapter = chapter.value;
+
+    for (let i=0; i < items.length; i++) {
+      if (!elm) return;
+      if (currentChapter !== chapter.value) return;
+
+      insertImage(items[i]);
+      await new Promise((ok) => setTimeout(ok, 500));
+    }
+  }, 300);
 }
 
 watch(chapter, loadImages);
-watch(images, async (items) => {
-  window.scrollTo(0,0);
-  const elm = elmImages.value;
-
-  const currentChapter = chapter.value;
-  const { itemsCount } = chaptersAll.value?.find((item) => item.name == chapter) ?? {};
-
-  for (let i=0; i < items.length; i++) {
-    if (!elm) return;
-    if (currentChapter !== chapter.value) return;
-
-    const img = document.createElement("IMG");
-    img.src = items[i];
-    img.loading = "lazy";
-
-    elm.appendChild(img);
-    await new Promise((ok) => setTimeout(ok, 500));
-  }
-});
 
 onMounted(() => {
   loadImages();
