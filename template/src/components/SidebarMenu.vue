@@ -1,10 +1,14 @@
 <script setup>
-import { defineProps, defineEmits, computed } from "vue";
+import { defineProps, defineEmits, computed, watch } from "vue";
 
 const { active, title, list } = defineProps(["title", "list", "active"]);
 const $emit = defineEmits(["close"]);
 
 const className = computed(() => ["c-sidebarMenu", active && "c-sidebarMenu--active"]);
+
+watch(() => active, (newValue) => {
+  document.body.style.overflowY = newValue ? "hidden" : "";
+});
 </script>
 
 <template>
