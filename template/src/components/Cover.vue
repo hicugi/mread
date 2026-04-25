@@ -48,6 +48,7 @@ const { image } = defineProps(["image"]);
   display: grid;
   align-items: flex-end;
 }
+
 .c-cover-body::before,
 .c-cover-body::after {
   z-index: -1;
@@ -57,13 +58,15 @@ const { image } = defineProps(["image"]);
   transform: translateX(-50%);
   width: 100%;
   height: 100%;
+  content: "";
+}
+.c-cover-body::before {
   background: linear-gradient(
     to bottom,
     #0e0e0e99,
     #0e0e0ecd 60%,
     #0e0e0e 100%
   );
-  content: "";
 }
 @media(min-width: 740px) {
   .c-cover-body::after {
@@ -72,8 +75,8 @@ const { image } = defineProps(["image"]);
       to right,
       #0e0e0e,
       #0e0e0ecd 3%,
-      #0e0e0e99 5%,
-      #0e0e0e99 95%,
+      transparent 5%,
+      transparent 95%,
       #0e0e0ecd 97%,
       #0e0e0e 100%
     );
