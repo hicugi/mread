@@ -28,6 +28,8 @@ export default {
   },
 
   data: () => ({
+    isApp,
+
     iconCog,
     iconRead,
     iconContinue,

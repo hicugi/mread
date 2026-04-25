@@ -2,7 +2,7 @@
 
 <template>
   <Cover v-if="onTop" class="p-home-top" :image="onTop.image">
-    <template v-slot:header>
+    <template v-if="isApp" v-slot:header>
       <span />
       <UiButton size="large" @click="openConfigDialog">
         <img :src="iconCog" width="20px" />
@@ -37,7 +37,6 @@
       </UiButton>
     </div>
   </Cover>
-
   <section class="p-home__list container">
     <h2>Editor's Picks</h2>
 
