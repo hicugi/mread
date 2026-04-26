@@ -2,11 +2,14 @@
 import { ref, computed, inject, useTemplateRef, watch, onMounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
 
-import MangaHeader from "../components/manga/header.vue";
 import ChapterControls from "../components/manga/chapter/controls.vue";
 import ChapterImage from "../components/manga/chapter/images.vue";
+import UiButton from "../components/ui/Button.vue";
 import { isApp, fetchChapters, getImgUrl } from "../helper/main.js";
 import { useManga } from "../helper/useManga.js";
+
+import iconBack from "./iconBack.svg";
+import iconBook from "./iconBook.svg";
 
 const route = useRoute();
 const router = useRouter();
@@ -83,6 +86,26 @@ const loadImages = async () => {
 
 watch(chapter, loadImages);
 
+function selectChapter() {
+  const elm = document.querySelector("select");
+  elm.showPicker();
+}
+function handleChapterSelect(chapter) {
+  const elm = elmImages.value;
+  elm.innerHTML = "";
+
+  window.scrollTo(0,0);
+
+  setTimeout(() => {
+    const { alias } = route.params;
+
+    router.push({ name: "chapter", params: {
+      alias,
+      chapter,
+    }});
+  }, 100);
+}
+
 onMounted(() => {
   loadImages();
 
@@ -105,21 +128,62 @@ onMounted(() => {
 <template>
   <div ref="myElm" />
 
-  <MangaHeader
-    :title="`${name} - ${chapter}`"
-    @back="handleBackClick"
-  />
+  <header class="p-chapter-header container">
+    <UiButton
+      v-if="alias"
+      :link="{ name: 'details', pararms: { alias } }"
+      size="large"
+    >
+      <img :src="iconBack" width="18px" />
+    </UiButton>
+
+    <div>
+      <h1>{{ info.name }}</h1>
+      <p>Chapter {{ chapter }}</p>
+    </div>
+
+    <UiButton
+      size="large"
+      @click="selectChapter"
+    >
+      <img :src="iconBook" width="18px" />
+    </UiButton>
+  </header>
 
   <ChapterControls
     :key="chapter"
     :value="chapter"
     :items="chaptersAll"
+    @select="handleChapterSelect"
   />
 
   <div class="p-chapter__images" ref="elmImages" :key="chapter" />
 </template>
 
 <style>
+.p-chapter-header {
+  z-index: 1;
+  position: relative;
+  margin-top: 24px;
+  margin-bottom: 24px;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 16px;
+  align-items: center;
+}
+.p-chapter-header h1 {
+  margin: 0;
+  color: #fff;
+  font-size: 18px;
+  line-height: 1;
+}
+.p-chapter-header p {
+  margin: 0;
+  color: #adaaaa;
+  font-size: 12px;
+  line-height: 16px;
+}
+
 .p-chapter__images img {
   margin: 0 auto;
   display: block;

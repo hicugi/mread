@@ -37,20 +37,15 @@ function handleNextClick() {
   selectChapter(index - 1);
 }
 
-const emit = defineEmits(["select"]);
+const $emit = defineEmits(["select"]);
 
 function selectChapter(index) {
-  const { alias } = route.params;
-
-  router.push({ name: "chapter", params: {
-    alias,
-    chapter: props.items[index].name,
-  }});
+  $emit("select", props.items[index].name);
 }
 </script>
 
 <template>
-  <div class="container">
+  <div class="controls container">
     <select class="controls__select" :value="value" @change="handleSelect">
       <option v-for="(item, i) of items" :key="i" :value="item.name">
         {{ item.name }}
@@ -77,12 +72,20 @@ function selectChapter(index) {
 </template>
 
 <style>
+.controls {
+  display: flex;
+  justify-content: flex-end;
+}
 .controls__select {
+  position: absolute;
+  top: 24px;
   margin: 0 auto;
   display: block;
   width: 100%;
-  max-width: 320px;
-  padding: 12px 15px;
+  max-width: 532px;
+  padding: 20px 15px;
+  opacity: 0;
+  pointer-events: none;
 }
 
 .controls-nav {

@@ -3,7 +3,6 @@ import { ref, computed, inject, useTemplateRef, onMounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
 
 import Cover from "../../components/Cover.vue";
-import MangaHeader from "../../components/manga/header.vue";
 import DetailsChapters from "./Chapters.vue";
 import ChapterControls from "../../components/manga/chapter/controls.vue";
 import UiButton from "../../components/ui/Button.vue";
@@ -82,11 +81,7 @@ onMounted(() => {
     <Cover v-if="info?.image" :image="info.image">
       <template v-slot:header>
         <div>
-          <UiButton
-            class="p-details__back-btn"
-            :link="{ name: 'home' }"
-            size="large"
-          >
+          <UiButton :link="{ name: 'home' }" size="large">
             <img :src="iconBack" width="18px" />
           </UiButton>
         </div>
