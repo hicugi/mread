@@ -48,11 +48,7 @@ const filteredChapters = computed(() => {
 async function handleDownload(chapter) {
   const { alias, name, image } = info.value;
 
-  const data = await fetchImages(alias, chapter);
-
-  let payload = [alias, name, getImgUrl(image), chapter].join("|");
-  payload += ";" + data.map(getImgUrl).join("|");
-
+  const payload = [alias, name, getImgUrl(""), image, chapter.name, chapter.itemsCount].join("|");
   flDownloadChapter.postMessage(payload);
 }
 function handleRemove(chapter) {
@@ -107,7 +103,7 @@ function handleShowMore() {
               v-else
               class="p-detailsChapters-item__control"
               type="button"
-              @click="handleDownload(item.name)"
+              @click="handleDownload(item)"
             >
               <img :src="iconDownload" width="16px" />
             </button>

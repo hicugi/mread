@@ -245,6 +245,7 @@ class _MyWebViewState extends State<ChildWidget> {
           _sendProgressNotification(title, description, descriptionDone, chaptersLen, () {
             return downloadedCount;
           }).then((_) {
+            Manga.clearDetailsCache(alias);
             _jsRun("appDownloadComplete", "");
           });
 
@@ -265,16 +266,15 @@ class _MyWebViewState extends State<ChildWidget> {
       ..addJavaScriptChannel(
         'flDownloadChapter',
         onMessageReceived: (JavaScriptMessage data) async {
-          await _requestNotificationPolicyAccess();
-          if (!_isNotificationsWorking) return;
+          if (!_isNotificationsWorking) {
+            await _requestNotificationPolicyAccess();
+            if (!_isNotificationsWorking) return;
+          }
 
-          var payload = data.message.split(";");
-          var [alias, name, image, chapter] = payload[0].split("|");
+          var [alias, name, preUrl, image, chapter, imagesCount] = data.message.split("|");
+          int imagesLen = int.parse(imagesCount);
 
-          await Manga.downloadMangaInfo(alias, name, image);
-
-          var images = payload[1].split("|");
-          var imagesLen = images.length;
+          await Manga.downloadMangaInfo(alias, name, "$preUrl$image");
 
           Directory mangaDir = await Manga.getMangaDir();
 
@@ -295,14 +295,11 @@ class _MyWebViewState extends State<ChildWidget> {
             _jsRun("appDownloadComplete", "");
           });
 
-          for (var i=0; i < imagesLen; i++) {
-            int idx = i + 1;
-            String url = images[i];
-
-            General.downloadImage(url, "$chapterPath/$idx").then((bool _) async {
-              downloadedCount++;
-            });
-          }
+          await Manga.insertChapter(alias, chapter, preUrl, imagesLen, () {
+            downloadedCount++;
+          });
+          await Manga.clearDetailsCache(alias);
+          _jsRun("appSyncDownloadedChapter", "{ alias: '$alias', chapter: { name: '$chapter', itemsCount: $imagesLen } }");
         },
       )
 

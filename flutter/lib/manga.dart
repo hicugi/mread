@@ -76,6 +76,10 @@ class Manga {
     General.writeFile(cacheFilePath, content);
     jsRun(fnName, content);
   }
+  static Future<void> clearDetailsCache(String alias) async {
+    String cacheFilePath = "$MANGA_DIR/$alias/$MANGA_DETAILS_CACHE";
+    await General.removeFile(cacheFilePath);
+  }
 
   static Future<String?> getLastReadManga() async {
     Directory mangaDir = await getMangaDir();
@@ -187,12 +191,14 @@ class Manga {
       jsRun("appInsertManga", content);
   }
 
-  static insertChapter(String alias, String chapter, String url, int imagesCount) async {
+  static insertChapter(String alias, String chapter, String url, int imagesCount, [callback]) async {
       Directory dir = await General.createDir("$MANGA_DIR/$alias/$chapter");
 
       for (var i=0; i < imagesCount; i++) {
         int idx = i + 1;
         await General.downloadImage("${url}manga/$alias/$chapter/$i", "${dir.path}/$idx");
+
+        if (callback ?? false) callback();
       }
   }
 

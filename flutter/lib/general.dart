@@ -62,6 +62,12 @@ class General {
 
     await file.writeAsString(content);
   }
+  static Future removeFile(String path) async {
+    Directory local = await getLocaleDir();
+    File file = await File("${local.path}/$path");
+
+    await file.delete();
+  }
 
   static Iterable getDirSortedItems(dirItems) {
     Iterable result = dirItems.map((v) {
