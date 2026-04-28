@@ -28,3 +28,5 @@ A flexible layer used to manage and update the WebView content for both Android 
 ### Flutter
 
 A cross-platform application built with Flutter, providing a unified interface for Android and iOS. It supports development mode for testing and delivers a smooth, responsive reading experience.
+
+[![Demo](media/app.gif)](media/app.mp4)
