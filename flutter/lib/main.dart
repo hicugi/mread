@@ -274,15 +274,11 @@ class _MyWebViewState extends State<ChildWidget> {
           var [alias, name, preUrl, image, chapter, imagesCount] = data.message.split("|");
           int imagesLen = int.parse(imagesCount);
 
-          await Manga.downloadMangaInfo(alias, name, "$preUrl$image");
+          if (image.substring(0, 16) != "data:file;base64") {
+            await Manga.downloadMangaInfo(alias, name, preUrl + image);
+          }
 
           Directory mangaDir = await Manga.getMangaDir();
-
-          String chapterPath = "${mangaDir.path}/$alias/$chapter";
-          Directory chapterDir = Directory(chapterPath);
-          if (!chapterDir.existsSync()) {
-            chapterDir.createSync(recursive: true);
-          }
 
           String title = "$name - $chapter";
           String description = "Downloading $imagesLen images";

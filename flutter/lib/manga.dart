@@ -198,7 +198,7 @@ class Manga {
         int idx = i + 1;
         await General.downloadImage("${url}manga/$alias/$chapter/$i", "${dir.path}/$idx");
 
-        if (callback ?? false) callback();
+        if (callback is Function) callback();
       }
   }
 
