@@ -15,6 +15,12 @@ async function downloadAll() {
     await downloadChapter(item);
   }
 }
+async function downloadLatest() {
+  for (const item of props.items) {
+    if (item.isDownloaded) break;
+    await downloadChapter(item);
+  }
+}
 
 async function handleSelect(index) {
   if (confirm("Only one?")) {
@@ -24,7 +30,7 @@ async function handleSelect(index) {
   for (let i=index; i >= 0; i--) {
     const item = props.items[i];
 
-    if (item.isDownloaded) continue;
+    if (item.isDownloaded) break;
     await downloadChapter(item);
   }
 }
@@ -78,7 +84,8 @@ async function downloadChapter(item) {
 </script>
 
 <template>
-  <UiButton type="button" @click="downloadAll()">Download all</UiButton>
+  <UiButton type="button" @click="downloadAll">Download all</UiButton>
+  <UiButton type="button" @click="downloadLatest">Download latest</UiButton>
 
   <ul class="c-chaptersList">
     <template v-for="(item, i) in items" :key="i">
