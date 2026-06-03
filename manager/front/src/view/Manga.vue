@@ -1,10 +1,10 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue';
-import { useRoute } from 'vue-router'
+import { ref, computed, onMounted } from "vue";
+import { useRoute } from "vue-router";
 
-import UiButton from '../component/Ui/Button.vue';
-import ChaptersList from '../component/ChaptersList.vue';
-import { api } from '../constant.js';
+import UiButton from "../component/Ui/Button.vue";
+import ChaptersList from "../component/ChaptersList.vue";
+import { api } from "../constant.js";
 
 const route = useRoute();
 const info = ref(null);
@@ -17,27 +17,37 @@ const imageBg = computed(() => {
   const { image } = info.value;
   return {
     backgroundImage: `url('${image}')`,
-  }
+  };
 });
 
 function fetchChapters() {
   isChaptersLoading.value = true;
   const { name } = route.params;
 
-  api.get(`/manga/${name}`).then((data) => {
-    info.value = data;
-    chapters.value = data.chapters;
-  }).finally(() => {
-    isChaptersLoading.value = false;
-  });
+  api
+    .get(`/manga/${name}`)
+    .then((data) => {
+      info.value = data;
+      chapters.value = data.chapters;
+    })
+    .finally(() => {
+      isChaptersLoading.value = false;
+    });
 }
 
 function checkChapters() {
   const { name } = route.params;
 
-  api.post(`/manga/${name}/chapters`).then((data) => {
-    fetchChapters();
-  });
+  api
+    .post(`/manga/${name}/chapters`)
+    .then((data) => {
+      fetchChapters();
+      alert("Chapters successfully fetched");
+    })
+    .catch((err) => {
+      console.error(err);
+      alert(`Got an errror: ${err.message}`);
+    });
 }
 
 onMounted(() => {
@@ -52,7 +62,12 @@ onMounted(() => {
     <h3>Name: {{ info.name }}</h3>
 
     <div>
-      <UiButton type="button" :disabled="isChaptersLoading" @click="checkChapters">Check chapters</UiButton>
+      <UiButton
+        type="button"
+        :disabled="isChaptersLoading"
+        @click="checkChapters"
+        >Check chapters</UiButton
+      >
 
       <h2>Chapters:</h2>
       <ChaptersList :items="chapters" />
