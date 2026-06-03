@@ -47,16 +47,18 @@ function handleBackClick() {
 }
 
 const loadImages = async () => {
-  setTimeout(async () => {
-    const { alias, chapter } = route.params;
-    let isDownloaded = false;
+  const { alias, chapter } = route.params;
+  const currentChapter = chapter;
 
-    for (const item of chaptersAll.value) {
-      if (item.name === chapter) {
-        isDownloaded = !!item.isDownloaded;
-        break;
+  setTimeout(async () => {
+    const isDownloaded = (() => {
+      for (const item of chaptersAll.value) {
+        if (item.name === chapter) {
+          return !!item.isDownloaded;
+        }
       }
-    }
+      return false;
+    })();
 
     if (typeof flSynchChapterSave !== "undefined") {
       flSynchChapterSave.postMessage([alias, chapter].join("|"));
@@ -72,7 +74,6 @@ const loadImages = async () => {
 
     const elm = elmImages.value;
     const { itemsCount } = chaptersAll.value?.find((item) => item.name == chapter) ?? {};
-    const currentChapter = chapter;
 
     for (let i=0; i < itemsCount; i++) {
       if (!elm) return;
